@@ -1,0 +1,21 @@
+services:
+  annotation-review:
+    #build: ./
+    image: semtech/mu-javascript-template:1.9.1
+    restart: no
+    labels:
+      - logging=true
+    environment:
+      TZ: Europe/Brussels
+      NODE_ENV: development
+    ports:
+      - "8082:80"
+      - "9225:9229"
+    volumes:
+      - ./:/app
+    networks:
+      - debug
+
+networks:
+  debug:
+    external: true

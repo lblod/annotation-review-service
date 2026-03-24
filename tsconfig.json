@@ -1,0 +1,8 @@
+{
+  "compilerOptions": {
+    "types": ["mu-types"],
+    "lib": ["ES2015"],
+    "allowSyntheticDefaultImports": true
+  },
+  "exclude": ["node_modules", "contract-tests"]
+}
