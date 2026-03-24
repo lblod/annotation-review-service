@@ -31,6 +31,37 @@ The response has the format
 }
 ```
 
+pagination is done by query params `page` and `pageSize`
+
+### GET /annotations/:type/:id
+
+Returns the annotations for the given target type for the target with the given id.
+
+The response has the format
+
+```json
+{
+  "target": {
+    "uri": "http://www.example.com/id/33de091e-b8ec-445e-9984-6813bcb36997",
+    "id": "33de091e-b8ec-445e-9984-6813bcb36997",
+    "title": "some title here"
+  },
+  "annotations": [
+    {
+      "uri": "http://example.org/1ff8e284-070f-4c0b-a390-8eddb3111a96",
+      "id": "A612392A-237D-11F1-9258-8C0B7F0C8194",
+      "type": "http://data.europa.eu/eli/ontology#based_on",
+      "value": "artikel 74 van het Decreet Lokaal Bestuur\n\nStemmen",
+      "agent": "http://example.org/entity-extraction",
+      "agentName": "NER"
+    }
+  ],
+  "annotationCount": 1
+}
+```
+
+pagination is done by query params `page` and `pageSize`
+
 ## Configuration
 
 The configuration specifies the available targets and how to render them. It exports a default object with the following properties:
@@ -44,7 +75,9 @@ The targets hold the available types of target as a json object, with the keys b
   // some prefixes you can reuse in the other parts of this definition
   "prefixes": "PREFIX eli: <http://data.europa.eu/eli/ontology#>",
   // some sparql snippet to be used to filter the targets, available variables are ?target, ?title and ?annotation
-  "targetFilters": "?target a eli:Expression .",
+  "targetFilter": "?target a eli:Expression .",
+  // some sparql snippet to be used to filter the targets, available variables are ?annotation, ?agent
+  "annotationFilter": "VALUES ?agent {   <http://example.org/entity-extraction>  }",
   // TODO this format is still unstable, it will be the possible filters to be passed in by the frontend
   "filters": {},
   // The path to get the title of a target, can be complex if the titles themselves are annotations,
