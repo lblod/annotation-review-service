@@ -18,6 +18,12 @@ export default {
         ?work eli:is_realized_by ?target .
         FILTER (BOUND(?title))
       `,
+      // can use to filter annotations for a given target, need to fix the set of agents once we have final uris for them
+      annotationFilter: `
+        VALUES ?agent {
+          <http://example.org/entity-extraction>
+        }
+      `,
       filters: {
         owner: {
           query: `

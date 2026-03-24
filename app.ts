@@ -4,6 +4,10 @@ import express, { Request, ErrorRequestHandler } from 'express';
 import bodyParser from 'body-parser';
 import config from './config/config';
 import { getTargetCount, getTargets } from './controllers/annotation-target';
+import {
+  getAnnotationCountForTarget,
+  getAnnotationsForTarget,
+} from './controllers/annotations';
 
 app.use(
   bodyParser.json({
@@ -37,6 +41,26 @@ app.get('/targets/:type', async (req, res) => {
   ]);
 
   res.send({ targets, count });
+});
+
+app.get('/annotations/:type/:id', async (req, res) => {
+  const type = req.params.type;
+  const id = req.params.id;
+
+  const target = config.targets[type];
+  if (!target) {
+    res.status(404).send({ error: `Unknown target type ${type}` });
+    return;
+  }
+  const page = parseInt(req.query.page as string) || 0;
+  const pageSize = parseInt(req.query.pageSize as string) || 10;
+
+  const [annotationCount, annotations] = await Promise.all([
+    getAnnotationCountForTarget(target, id),
+    getAnnotationsForTarget(target, id, page, pageSize),
+  ]);
+
+  res.send({ ...annotations, annotationCount });
 });
 
 const errorHandler: ErrorRequestHandler = function (err, _req, res, _next) {

@@ -1,5 +1,4 @@
 import { Target } from '../types';
-import { querySudo } from '@lblod/mu-auth-sudo';
 import { query } from 'mu';
 
 export async function getTargets(
@@ -54,7 +53,7 @@ export async function getTargetCount(
   return parseInt(result.results.bindings[0].count.value);
 }
 
-function getTargetSelector(target: Target) {
+export function getTargetSelector(target: Target) {
   return `
       ${target.targetFilter}
 
