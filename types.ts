@@ -1,5 +1,6 @@
 export type Target = {
   annotationFilter: string;
+  annotationPath: string;
   filters: {
     [filterName: string]: {
       query: string;
@@ -10,4 +11,18 @@ export type Target = {
   prefixes: string;
   targetFilter: string;
   titlePath: string;
+};
+
+export type Annotation = {
+  uri: string;
+  id: string;
+  link: string;
+  type: string;
+  value: string;
+  agent: string;
+  agentName: string;
+};
+
+export type HumanReadableAnnotation = Annotation & {
+  valueText: string;
 };
