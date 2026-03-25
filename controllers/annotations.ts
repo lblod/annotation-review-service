@@ -50,6 +50,7 @@ async function getAnnotationsData(
     PREFIX mu: <http://mu.semte.ch/vocabularies/core/>
     PREFIX prov: <http://www.w3.org/ns/prov#>
     PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
+    PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
 
     SELECT DISTINCT ?annotation ?uuid ?predicate ?object ?agent ?agentName ?type 
     WHERE {
