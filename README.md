@@ -85,3 +85,18 @@ The targets hold the available types of target as a json object, with the keys b
   "titlePath": "?target eli:title ?title ."
 }
 ```
+
+### valueTypes
+
+The valueTypes hold configuration per type of value for an annotation. This allows you to specify how the value should be rendered to text for a user. This is because some annotation values can be complex, e.g. a period of time, which means the annotation body itself is actually also a URI with a set of different properties.
+
+`valueTypes` is a key-value object where the keys are the uri of the types and the values is the specification of how they should be rendered. In this value, `textPath` is the main attribute. It connects `?object`, the body of the annotation, to a textual representation of it in the variable `?objectText`. For instance
+
+```json
+{
+  "http://xmlns.com/foaf/0.1/Person": {
+    "name": "Person",
+    "textPath": "?object <http://xmlns.com/foaf/0.1/name> ?objectText ."
+  }
+}
+```
