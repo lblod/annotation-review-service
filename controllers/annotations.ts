@@ -59,7 +59,7 @@ async function getAnnotationsData(
     PREFIX prov: <http://www.w3.org/ns/prov#>
     PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
 
-    SELECT DISTINCT ?annotation ?uuid ?predicate ?object ?agent ?agentName
+    SELECT DISTINCT ?annotation ?uuid ?predicate ?object ?agent ?agentName ?type 
     WHERE {
       VALUES ?uuid {
         ${sparqlEscapeString(targetId)}
@@ -75,6 +75,10 @@ async function getAnnotationsData(
       OPTIONAL {
         ?agent skos:prefLabel ?agentName .
       }
+      OPTIONAL {
+        ?object a ?typeClass .
+      }
+      BIND(IF(BOUND(?typeClass), ?typeClass, datatype(?object)) AS ?type)
 
       ${target.annotationFilter}
     }    
@@ -85,7 +89,8 @@ async function getAnnotationsData(
   return result.results.bindings.map((binding) => ({
     uri: binding.annotation.value,
     id: binding.uuid.value,
-    type: binding.predicate.value,
+    link: binding.predicate.value,
+    type: binding.type.value,
     value: binding.object.value,
     agent: binding.agent.value,
     agentName: binding.agentName?.value,
