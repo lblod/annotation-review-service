@@ -54,11 +54,15 @@ export default {
     'http://xmlns.com/foaf/0.1/Person': {
       name: 'Person',
       // this should be foaf:name, to be fixed in ai service
-      textPath: `?object <http://www.w3.org/2000/01/rdf-schema#label> ?objectText .`,
+      textPath: `
+        ?object <http://www.w3.org/2000/01/rdf-schema#label> ?objectText .
+      `,
     },
     'http://www.w3.org/ns/org#Organization': {
       name: 'Organization',
-      textPath: `?object <http://www.w3.org/2000/01/rdf-schema#label> ?objectText .`,
+      textPath: `
+        ?object <http://www.w3.org/2000/01/rdf-schema#label> ?objectText .
+      `,
     },
   },
 };
