@@ -53,7 +53,12 @@ The response has the format
       "type": "http://data.europa.eu/eli/ontology#based_on",
       "value": "artikel 74 van het Decreet Lokaal Bestuur\n\nStemmen",
       "agent": "http://example.org/entity-extraction",
-      "agentName": "NER"
+      "agentName": "NER",
+      "counts": {
+        "reject": 1,
+        "approve": 2,
+        "ownReview": "approve"
+      }
     }
   ],
   "annotationCount": 1
@@ -61,6 +66,27 @@ The response has the format
 ```
 
 pagination is done by query params `page` and `pageSize`
+
+### POST /review/:annotationId/:result
+
+Stores the user's review. This service currently tracks the user using a SESSION, not an account. This is because in our use-case, we don't want users to register/sign in. If a user reviews the same annotation instance again later, the earlier review is removed (again for the same SESSION).
+
+Note that a review is itself an annotation (with the extra type ext:ReviewAnnotation).
+
+Parameters:
+
+- annotationId: the id of the annotation to review
+- result: either `approve` or `reject` as a string
+
+returns the new counts for the annotation:
+
+```json
+{
+  "reject": 1,
+  "approve": 2,
+  "ownReview": "approve"
+}
+```
 
 ## Configuration
 
