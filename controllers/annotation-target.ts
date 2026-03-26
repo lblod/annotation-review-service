@@ -56,17 +56,17 @@ async function getTargetAnnotationCount(target: Target, targetIds: string[]) {
     PREFIX prov: <http://www.w3.org/ns/prov#>
     PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
 
-    SELECT ?uuid (COUNT(DISTINCT ?annotation) as ?count) 
+    SELECT ?targetId (COUNT(DISTINCT ?annotation) as ?count) 
     
     WHERE {
       ${buildAnnotationWhere(target, targetIds)}
-    } GROUP BY ?uuid
+    } GROUP BY ?targetId
   `);
 
   const targetCountMap = {};
 
   results.results.bindings.forEach((binding) => {
-    targetCountMap[binding.uuid.value] = parseInt(binding.count.value);
+    targetCountMap[binding.targetId.value] = parseInt(binding.count.value);
   });
   return targetCountMap;
 }

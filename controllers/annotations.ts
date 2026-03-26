@@ -1,6 +1,7 @@
 import { Annotation, HumanReadableAnnotation, Target } from '../types';
 import { query, sparqlEscapeString, sparqlEscapeUri } from 'mu';
 import config from '../config/config';
+import { getAnnotationCounts } from './review';
 
 export async function getAnnotationCountForTarget(
   target: Target,
@@ -21,6 +22,7 @@ export async function getAnnotationCountForTarget(
 }
 
 export async function getAnnotationsForTarget(
+  sessionId: string,
   target: Target,
   targetId: string,
   page: number,
@@ -30,9 +32,23 @@ export async function getAnnotationsForTarget(
     getTargetData(target, targetId),
     getAnnotationsData(target, targetId, page, pageSize),
   ]);
+  const [humanReadableAnnotations, annotationCounts] = await Promise.all([
+    addObjectText(annotations),
+    getAnnotationCounts(
+      sessionId,
+      annotations.map((annotation) => annotation.id),
+    ),
+  ]);
+
   return {
     target: targetData,
-    annotations: await addObjectText(annotations),
+    annotations: humanReadableAnnotations.map((annotation) => {
+      const counts = annotationCounts[annotation.id];
+      return {
+        ...annotation,
+        counts,
+      };
+    }),
   };
 }
 
@@ -52,7 +68,7 @@ async function getAnnotationsData(
     PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
     PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
 
-    SELECT DISTINCT ?annotation ?uuid ?predicate ?object ?agent ?agentName ?type 
+    SELECT DISTINCT ?annotation ?targetId ?predicate ?object ?agent ?agentName ?type 
     WHERE {
       ${buildAnnotationWhere(target, [targetId])}
     }    
@@ -64,7 +80,7 @@ async function getAnnotationsData(
     (binding) =>
       ({
         uri: binding.annotation.value,
-        id: binding.uuid.value,
+        id: binding.targetId.value,
         link: binding.predicate.value,
         type: binding.type.value,
         value: binding.object.value,
@@ -137,10 +153,10 @@ export function buildAnnotationWhere(target: Target, targetIds: string[]) {
       return sparqlEscapeString(id);
     })
     .join('\n');
-  return `VALUES ?uuid {
+  return `VALUES ?targetId {
       ${values}
     }
-    ?target mu:uuid ?uuid .
+    ?target mu:uuid ?targetId .
 
     ${target.annotationPath}
 

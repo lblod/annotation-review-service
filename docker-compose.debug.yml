@@ -6,6 +6,7 @@ services:
     labels:
       - logging=true
     environment:
+      DEFAULT_MU_AUTH_SCOPE: "http://services.semantic.works/annotation-review-service"
       TZ: Europe/Brussels
       NODE_ENV: development
     ports:

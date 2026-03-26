@@ -64,4 +64,5 @@ export default {
       `,
     },
   },
+  reviewBodyPrefix: 'http://mu.semte.ch/vocabularies/ext/annotation-review#',
 };
