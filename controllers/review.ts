@@ -40,6 +40,8 @@ async function addReviewAnnotation(
   const newId = uuid();
   const newUri = `http://data.lblod.info/id/annotations/${newId}`;
 
+  const safeBody = sparqlEscapeUri(config.reviewBodyPrefix + result);
+
   await update(`
     PREFIX mu: <http://mu.semte.ch/vocabularies/core/>
     PREFIX ext: <http://mu.semte.ch/vocabularies/ext/>
@@ -50,9 +52,7 @@ async function addReviewAnnotation(
       ?reviewAnnotation a oa:Annotation .
       ?reviewAnnotation a ext:ReviewAnnotation .
       ?reviewAnnotation oa:hasTarget ?annotation .
-      ?reviewAnnotation oa:hasBody ${sparqlEscapeUri(
-        config.reviewBodyPrefix + result,
-      )} .
+      ?reviewAnnotation oa:hasBody ${safeBody} .
       ?reviewAnnotation oa:motivatedBy oa:assessing .
       ?reviewAnnotation mu:uuid ?reviewAnnotationId .
       ?reviewAnnotation dct:created ?now .
