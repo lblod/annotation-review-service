@@ -7,6 +7,8 @@ import { getTargetCount, getTargets } from './controllers/annotation-target';
 import {
   getAnnotationCountForTarget,
   getAnnotationsForTarget,
+  getAllAnnotationCountForTarget,
+  getAllAnnotationsForTarget,
 } from './controllers/annotations';
 import { reviewAnnotation } from './controllers/review';
 
@@ -60,6 +62,26 @@ app.get('/annotations/:type/:id', async (req, res) => {
   const [annotationCount, annotations] = await Promise.all([
     getAnnotationCountForTarget(target, id),
     getAnnotationsForTarget(sessionId, target, id, page, pageSize),
+  ]);
+
+  res.send({ ...annotations, annotationCount });
+});
+
+app.get('/annotations/:type', async (req, res) => {
+  const type = req.params.type;
+  const sessionId = req.get('mu-session-id') as string;
+
+  const target = config.targets[type];
+  if (!target) {
+    res.status(404).send({ error: `Unknown target type ${type}` });
+    return;
+  }
+  const page = parseInt(req.query.page as string) || 0;
+  const pageSize = parseInt(req.query.pageSize as string) || 10;
+
+  const [annotationCount, annotations] = await Promise.all([
+    getAllAnnotationCountForTarget(target),
+    getAllAnnotationsForTarget(sessionId, target, page, pageSize),
   ]);
 
   res.send({ ...annotations, annotationCount });
