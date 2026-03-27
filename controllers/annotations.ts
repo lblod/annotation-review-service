@@ -121,6 +121,12 @@ async function getAnnotationsData(
   pageSize: number,
   targetId?: string,
 ) {
+  let targetValueFilter = '';
+  if (targetId) {
+    targetValueFilter = `VALUES ?targetId {
+      ${sparqlEscapeString(targetId)}
+    }`;
+  }
   const offset = page * pageSize;
   const result = await query(`
     ${target.prefixes}
