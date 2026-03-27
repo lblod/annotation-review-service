@@ -22,6 +22,7 @@ export default {
       annotationFilter: `
         VALUES ?agent {
           <http://example.org/entity-extraction>
+          <http://example.org/named-entity-linking>
         }
       `,
       annotationPath: `
