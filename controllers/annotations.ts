@@ -3,6 +3,27 @@ import { query, sparqlEscapeString, sparqlEscapeUri } from 'mu';
 import config from '../config/config';
 import { getAnnotationCounts } from './review';
 
+export async function getAllAnnotationCountForTarget(target: Target) {
+  const result = await query(`
+    ${target.prefixes}
+    PREFIX oa: <http://www.w3.org/ns/oa#>
+    PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+    PREFIX mu: <http://mu.semte.ch/vocabularies/core/>
+
+    SELECT (COUNT(DISTINCT ?annotation) AS ?count)
+    WHERE {
+      ?target mu:uuid ?uuid .
+
+      ${target.annotationPath}
+      
+      ?action prov:generated ?annotation .
+      ?action prov:wasAssociatedWith ?agent .
+      ${target.annotationFilter}
+    }    
+  `);
+  return parseInt(result.results.bindings[0].count.value);
+}
+
 export async function getAnnotationCountForTarget(
   target: Target,
   targetId: string,
@@ -21,6 +42,36 @@ export async function getAnnotationCountForTarget(
   return parseInt(result.results.bindings[0].count.value);
 }
 
+export async function getAllAnnotationsForTarget(
+  sessionId: string,
+  target: Target,
+  page: number,
+  pageSize: number,
+) {
+  const [targetData, annotations] = await Promise.all([
+    getTargetData(target),
+    getAnnotationsData(target, page, pageSize),
+  ]);
+  const [humanReadableAnnotations, annotationCounts] = await Promise.all([
+    addObjectText(annotations),
+    getAnnotationCounts(
+      sessionId,
+      annotations.map((annotation) => annotation.id),
+    ),
+  ]);
+
+  return {
+    target: targetData,
+    annotations: humanReadableAnnotations.map((annotation) => {
+      const counts = annotationCounts[annotation.id];
+      return {
+        ...annotation,
+        counts,
+      };
+    }),
+  };
+}
+
 export async function getAnnotationsForTarget(
   sessionId: string,
   target: Target,
@@ -30,7 +81,7 @@ export async function getAnnotationsForTarget(
 ) {
   const [targetData, annotations] = await Promise.all([
     getTargetData(target, targetId),
-    getAnnotationsData(target, targetId, page, pageSize),
+    getAnnotationsData(target, page, pageSize, targetId),
   ]);
   const [objectTexts, objectLinks, annotationCounts] = await Promise.all([
     getObjectTexts(annotations),
@@ -72,10 +123,16 @@ function mergeExtraAnnotationInfo(
 
 async function getAnnotationsData(
   target: Target,
-  targetId: string,
   page: number,
   pageSize: number,
+  targetId?: string,
 ) {
+  let targetValueFilter = '';
+  if (targetId) {
+    targetValueFilter = `VALUES ?targetId {
+      ${sparqlEscapeString(targetId)}
+    }`;
+  }
   const offset = page * pageSize;
   const result = await query(`
     ${target.prefixes}
@@ -101,9 +158,9 @@ async function getAnnotationsData(
         id: binding.annotationId.value,
         targetId: binding.targetId.value,
         link: binding.predicate.value,
-        type: binding.type.value,
+        type: binding.type?.value,
         value: binding.object.value,
-        agent: binding.agent.value,
+        agent: binding.agent?.value,
         agentName: binding.agentName?.value,
       }) as Annotation,
   );
@@ -240,7 +297,14 @@ export function buildAnnotationWhere(target: Target, targetIds: string[]) {
     ${target.annotationFilter}`;
 }
 
-export async function getTargetData(target: Target, targetId: string) {
+export async function getTargetData(target: Target, targetId?: string) {
+  let targetValueFilter = '';
+  if (targetId) {
+    targetValueFilter = `VALUES ?uuid {
+      ${sparqlEscapeString(targetId)}
+    }`;
+  }
+
   const result = await query(`
     ${target.prefixes}
     PREFIX oa: <http://www.w3.org/ns/oa#>
@@ -249,9 +313,7 @@ export async function getTargetData(target: Target, targetId: string) {
     
     SELECT ?target ?title ?uuid
     WHERE {
-      VALUES ?uuid {
-        ${sparqlEscapeString(targetId)}
-      }
+      ${targetValueFilter}
       ?target mu:uuid ?uuid .
       ${target.targetFilter}
       ${target.titlePath}
