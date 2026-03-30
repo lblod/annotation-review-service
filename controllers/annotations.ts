@@ -32,8 +32,9 @@ export async function getAnnotationsForTarget(
     getTargetData(target, targetId),
     getAnnotationsData(target, targetId, page, pageSize),
   ]);
-  const [humanReadableAnnotations, annotationCounts] = await Promise.all([
-    addObjectText(annotations),
+  const [objectTexts, objectLinks, annotationCounts] = await Promise.all([
+    getObjectTexts(annotations),
+    getObjectLinks(annotations),
     getAnnotationCounts(
       sessionId,
       annotations.map((annotation) => annotation.id),
@@ -42,14 +43,31 @@ export async function getAnnotationsForTarget(
 
   return {
     target: targetData,
-    annotations: humanReadableAnnotations.map((annotation) => {
-      const counts = annotationCounts[annotation.id];
-      return {
-        ...annotation,
-        counts,
-      };
-    }),
+    annotations: mergeExtraAnnotationInfo(
+      annotations,
+      objectTexts,
+      objectLinks,
+      annotationCounts,
+    ),
   };
+}
+
+function mergeExtraAnnotationInfo(
+  annotations,
+  textByObject,
+  linkByObject,
+  annotationCounts,
+) {
+  return annotations.map((annotation) => {
+    const counts = annotationCounts[annotation.id];
+
+    return {
+      ...annotation,
+      counts,
+      valueText: textByObject[annotation.value] || annotation.value,
+      valueLink: linkByObject[annotation.value],
+    };
+  });
 }
 
 async function getAnnotationsData(
@@ -91,9 +109,7 @@ async function getAnnotationsData(
   );
 }
 
-async function addObjectText(
-  annotations: Annotation[],
-): Promise<HumanReadableAnnotation[]> {
+async function getObjectTexts(annotations: Annotation[]) {
   const { valueTypes } = config;
 
   const valueInfo = annotations
@@ -110,15 +126,13 @@ async function addObjectText(
     .filter((stmt) => stmt !== null);
 
   if (valueInfo.length === 0) {
-    return annotations.map((annotation) => {
-      return { ...annotation, valueText: annotation.value };
-    });
+    return {};
   }
 
   const unionStatements = Object.keys(valueTypes)
     .filter((type) => valueInfo.some((info) => info.type === type))
     .map((type) => {
-      const textPath = valueTypes[type].textPath;
+      const textPath = valueTypes[type].textPath || config.defaultTextPath;
       return `
         {
           ?object a ${sparqlEscapeUri(type)} .
@@ -142,10 +156,57 @@ async function addObjectText(
     textByObject[binding.object.value] = binding.objectText.value;
   });
 
-  return annotations.map((annotation) => ({
-    ...annotation,
-    valueText: textByObject[annotation.value] || annotation.value,
-  }));
+  return textByObject;
+}
+
+async function getObjectLinks(annotations: Annotation[]) {
+  const { valueTypes } = config;
+
+  const valueInfo = annotations
+    .map((annotation) => {
+      const valueType = valueTypes[annotation.type];
+      if (!valueType) {
+        return null;
+      }
+      return {
+        value: annotation.value,
+        type: annotation.type,
+      };
+    })
+    .filter((stmt) => stmt !== null);
+
+  const unionStatements = Object.keys(valueTypes)
+    .filter((type) => valueInfo.some((info) => info.type === type))
+    .map((type) => {
+      const textPath = valueTypes[type].LinkPath || config.defaultLinkPath;
+      return `
+        {
+          ?object a ${sparqlEscapeUri(type)} .
+          ${textPath}
+        }
+      `;
+    });
+
+  if (valueInfo.length === 0) {
+    return {};
+  }
+
+  const result = await query(`
+    SELECT ?object ?objectLink
+    WHERE {
+      VALUES ?object {
+        ${valueInfo.map((t) => sparqlEscapeUri(t.value)).join('\n')}
+      }
+      ${unionStatements.join('\nUNION\n')}      
+    }
+  `);
+
+  const linkByObject: { [object: string]: string } = {};
+  result.results.bindings.forEach((binding) => {
+    linkByObject[binding.object.value] = binding.objectLink.value;
+  });
+
+  return linkByObject;
 }
 
 export function buildAnnotationWhere(target: Target, targetIds: string[]) {
