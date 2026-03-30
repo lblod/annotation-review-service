@@ -1,4 +1,4 @@
-import { Annotation, HumanReadableAnnotation, Target } from '../types';
+import { Annotation, Target } from '../types';
 import { query, sparqlEscapeString, sparqlEscapeUri } from 'mu';
 import config from '../config/config';
 import { getAnnotationCounts } from './review';
