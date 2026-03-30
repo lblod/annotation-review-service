@@ -22,7 +22,3 @@ export type Annotation = {
   agent: string;
   agentName: string;
 };
-
-export type HumanReadableAnnotation = Annotation & {
-  valueText: string;
-};
