@@ -52,8 +52,11 @@ export async function getAllAnnotationsForTarget(
     getTargetData(target),
     getAnnotationsData(target, page, pageSize),
   ]);
-  const [humanReadableAnnotations, annotationCounts] = await Promise.all([
-    addObjectText(annotations),
+  const [textByObject, annotationCounts] = await Promise.all([
+    getObjectPaths(annotations, {
+      pathName: 'textPath',
+      variable: 'objectText',
+    }),
     getAnnotationCounts(
       sessionId,
       annotations.map((annotation) => annotation.id),
@@ -62,12 +65,9 @@ export async function getAllAnnotationsForTarget(
 
   return {
     target: targetData,
-    annotations: humanReadableAnnotations.map((annotation) => {
-      const counts = annotationCounts[annotation.id];
-      return {
-        ...annotation,
-        counts,
-      };
+    annotations: mergeExtraAnnotationInfo(annotations, {
+      textByObject,
+      annotationCounts,
     }),
   };
 }
@@ -83,7 +83,7 @@ export async function getAnnotationsForTarget(
     getTargetData(target, targetId),
     getAnnotationsData(target, page, pageSize, targetId),
   ]);
-  const [objectTexts, objectLinks, annotationCounts] = await Promise.all([
+  const [textByObject, linkByObject, annotationCounts] = await Promise.all([
     getObjectPaths(annotations, {
       pathName: 'textPath',
       variable: 'objectText',
@@ -100,20 +100,17 @@ export async function getAnnotationsForTarget(
 
   return {
     target: targetData,
-    annotations: mergeExtraAnnotationInfo(
-      annotations,
-      objectTexts,
-      objectLinks,
+    annotations: mergeExtraAnnotationInfo(annotations, {
+      textByObject,
+      linkByObject,
       annotationCounts,
-    ),
+    }),
   };
 }
 
 function mergeExtraAnnotationInfo(
   annotations,
-  textByObject,
-  linkByObject,
-  annotationCounts,
+  { textByObject = {}, linkByObject = {}, annotationCounts = {} },
 ) {
   return annotations.map((annotation) => {
     const counts = annotationCounts[annotation.id];
