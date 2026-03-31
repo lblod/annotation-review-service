@@ -157,9 +157,10 @@ async function getAnnotationsData(
   return result.results.bindings.map(
     (binding) =>
       ({
+        target: binding.target.value,
+        targetId: binding.targetId.value,
         uri: binding.annotation.value,
         id: binding.annotationId.value,
-        targetId: binding.targetId.value,
         link: binding.predicate?.value,
         type: binding.type?.value,
         value: binding.object.value,
