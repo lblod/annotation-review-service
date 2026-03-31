@@ -160,7 +160,7 @@ async function getAnnotationsData(
         uri: binding.annotation.value,
         id: binding.annotationId.value,
         targetId: binding.targetId.value,
-        link: binding.predicate.value,
+        link: binding.predicate?.value,
         type: binding.type?.value,
         value: binding.object.value,
         agent: binding.agent?.value,
@@ -238,11 +238,18 @@ export function buildAnnotationWhere(target: Target, targetIds: string[]) {
 
     ${target.annotationPath}
 
-    ?annotation oa:hasBody ?body .
     ?annotation mu:uuid ?annotationId .
-    
-    ?body rdf:predicate ?predicate .
-    ?body rdf:object ?object .
+    {
+      ?annotation oa:hasBody ?body .
+      ?body rdf:predicate ?predicate .
+      ?body rdf:object ?object .
+    } UNION {
+      ?annotation oa:hasBody ?object .
+      FILTER NOT EXISTS {
+        ?object rdf:object ?object .
+      }
+    }
+
     ?action prov:generated ?annotation .
     ?action prov:wasAssociatedWith ?agent .
     OPTIONAL {
