@@ -75,12 +75,7 @@ export default {
         }
       `,
 
-      // TODO this should likely still be the default structure?
-      // annotationPath: `
-      //   ?annotation oa:hasTarget ?resource .
-      //   ?resource oa:source / ^eli:is_realized_by? ?target .
-      // `,
-
+      // these annotations are linking directly to the expression
       annotationPath: `
         ?annotation oa:hasTarget / ^eli:is_realized_by? ?target .
       `,
