@@ -33,7 +33,7 @@ app.get('/health', async (_req, res) => {
 
 app.get('/targets/:type', async (req, res) => {
   const type = req.params.type;
-  const filters = req.query.filter as any;
+  const filters = req.query.filter;
 
   const target = config.targets[type];
   if (!target) {
