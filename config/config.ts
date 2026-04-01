@@ -8,6 +8,8 @@ export default {
 
       prefixes: `
         PREFIX eli: <http://data.europa.eu/eli/ontology#>
+        PREFIX org: <http://www.w3.org/ns/org#>
+        PREFIX ext: <http://mu.semte.ch/vocabularies/ext/>
       `,
       // can also use to filter ?annotation in case we want to filter the kind of annotations to show
       // note that we have to filter by expressions having a work because other expressions are created
@@ -30,12 +32,17 @@ export default {
         ?resource oa:source / ^eli:is_realized_by? ?target .
       `,
       filters: {
-        owner: {
+        municipality: {
           query: `
-            ?target oa:hasBody ?body .
-            VALUES ?body { $filterValue } 
+            {
+              ?work eli:passed_by ?org .
+              ?municipality org:hasSubOrganization ?org .
+            } UNION {
+              ?target ext:importedFor ?municipality .
+            }
           `,
-          type: 'uri[]',
+          variable: 'municipality',
+          type: 'uri',
         },
       },
       titlePath: `
