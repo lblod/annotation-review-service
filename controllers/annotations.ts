@@ -121,12 +121,6 @@ async function getAnnotationsData(
   pageSize: number,
   targetId?: string,
 ) {
-  let targetValueFilter = '';
-  if (targetId) {
-    targetValueFilter = `VALUES ?targetId {
-      ${sparqlEscapeString(targetId)}
-    }`;
-  }
   const offset = page * pageSize;
   const result = await query(`
     ${target.prefixes}
@@ -137,9 +131,9 @@ async function getAnnotationsData(
     PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
     PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
 
-    SELECT DISTINCT ?annotation ?annotationId ?targetId ?predicate ?object ?agent ?agentName ?type 
+    SELECT DISTINCT ?annotation ?annotationId ?target ?targetId ?predicate ?object ?agent ?agentName ?type 
     WHERE {
-      ${buildAnnotationWhere(target, [targetId])}
+      ${buildAnnotationWhere(target, targetId ? [targetId] : [])}
     }    
     ORDER BY ?predicate ?annotation
     LIMIT ${pageSize}
@@ -267,9 +261,16 @@ export function buildAnnotationWhere(target: Target, targetIds: string[]) {
       return sparqlEscapeString(id);
     })
     .join('\n');
-  return `VALUES ?targetId {
+
+  let valuesStatement = '';
+  if (targetIds.length > 0) {
+    valuesStatement = `VALUES ?targetId {
       ${values}
-    }
+    }`;
+  }
+  return `
+    ${valuesStatement}
+
     ?target mu:uuid ?targetId .
 
     ${target.annotationPath}
@@ -282,7 +283,7 @@ export function buildAnnotationWhere(target: Target, targetIds: string[]) {
     } UNION {
       ?annotation oa:hasBody ?object .
       FILTER NOT EXISTS {
-        ?object rdf:object ?object .
+        ?object rdf:object ?something .
       }
     }
 
