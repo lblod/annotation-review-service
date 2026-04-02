@@ -70,7 +70,7 @@ app.post('/review/:annotationId/:result', async (req, res) => {
   const annotationId = req.params.annotationId;
   const sessionId = req.get('mu-session-id') as string;
 
-  if (['approve', 'reject'].indexOf(result) < 0) {
+  if (!['approve', 'reject'].includes(result)) {
     res.status(400).send({ error: `Unknown review result ${result}` });
     return;
   }
