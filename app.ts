@@ -8,6 +8,7 @@ import {
   getAnnotationCountForTarget,
   getAnnotationsForTarget,
 } from './controllers/annotations';
+import { reviewAnnotation } from './controllers/review';
 
 app.use(
   bodyParser.json({
@@ -46,6 +47,7 @@ app.get('/targets/:type', async (req, res) => {
 app.get('/annotations/:type/:id', async (req, res) => {
   const type = req.params.type;
   const id = req.params.id;
+  const sessionId = req.get('mu-session-id') as string;
 
   const target = config.targets[type];
   if (!target) {
@@ -57,10 +59,27 @@ app.get('/annotations/:type/:id', async (req, res) => {
 
   const [annotationCount, annotations] = await Promise.all([
     getAnnotationCountForTarget(target, id),
-    getAnnotationsForTarget(target, id, page, pageSize),
+    getAnnotationsForTarget(sessionId, target, id, page, pageSize),
   ]);
 
   res.send({ ...annotations, annotationCount });
+});
+
+app.post('/review/:annotationId/:result', async (req, res) => {
+  const result = req.params.result;
+  const annotationId = req.params.annotationId;
+  const sessionId = req.get('mu-session-id') as string;
+
+  if (!['approve', 'reject'].includes(result)) {
+    res.status(400).send({ error: `Unknown review result ${result}` });
+    return;
+  }
+  const currentCounts = await reviewAnnotation(
+    annotationId,
+    sessionId,
+    result as 'approve' | 'reject',
+  );
+  res.send(currentCounts);
 });
 
 const errorHandler: ErrorRequestHandler = function (err, _req, res, _next) {
