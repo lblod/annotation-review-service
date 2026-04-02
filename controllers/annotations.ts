@@ -13,16 +13,7 @@ export async function getAnnotationCountForTarget(
 
     SELECT (COUNT(DISTINCT ?annotation) AS ?count)
     WHERE {
-      VALUES ?uuid {
-        ${sparqlEscapeString(targetId)}
-      }
-      ?target mu:uuid ?uuid .
-      ?annotation oa:hasTarget ?resource .
-      ?resource oa:source ?target .
-      
-      ?action prov:generated ?annotation .
-      ?action prov:wasAssociatedWith ?agent .
-      ${target.annotationFilter}
+      ${buildAnnotationWhere(target, [targetId])}
     }    
   `);
   return parseInt(result.results.bindings[0].count.value);
@@ -61,26 +52,7 @@ async function getAnnotationsData(
 
     SELECT DISTINCT ?annotation ?uuid ?predicate ?object ?agent ?agentName ?type 
     WHERE {
-      VALUES ?uuid {
-        ${sparqlEscapeString(targetId)}
-      }
-      ?target mu:uuid ?uuid .
-      ?annotation oa:hasTarget ?resource .
-      ?resource oa:source ?target .
-      ?annotation oa:hasBody ?body .
-      ?body rdf:predicate ?predicate .
-      ?body rdf:object ?object .
-      ?action prov:generated ?annotation .
-      ?action prov:wasAssociatedWith ?agent .
-      OPTIONAL {
-        ?agent skos:prefLabel ?agentName .
-      }
-      OPTIONAL {
-        ?object a ?typeClass .
-      }
-      BIND(IF(BOUND(?typeClass), ?typeClass, datatype(?object)) AS ?type)
-
-      ${target.annotationFilter}
+      ${buildAnnotationWhere(target, [targetId])}
     }    
     ORDER BY ?predicate ?annotation
     LIMIT ${pageSize}
@@ -95,6 +67,34 @@ async function getAnnotationsData(
     agent: binding.agent.value,
     agentName: binding.agentName?.value,
   }));
+}
+
+export function buildAnnotationWhere(target: Target, targetIds: string[]) {
+  const values = targetIds
+    .map((id) => {
+      return sparqlEscapeString(id);
+    })
+    .join('\n');
+  return `VALUES ?uuid {
+      ${values}
+    }
+    ?target mu:uuid ?uuid .
+    ?annotation oa:hasTarget ?resource .
+    ?resource oa:source ?target .
+    ?annotation oa:hasBody ?body .
+    ?body rdf:predicate ?predicate .
+    ?body rdf:object ?object .
+    ?action prov:generated ?annotation .
+    ?action prov:wasAssociatedWith ?agent .
+    OPTIONAL {
+      ?agent skos:prefLabel ?agentName .
+    }
+    OPTIONAL {
+      ?object a ?typeClass .
+    }
+    BIND(IF(BOUND(?typeClass), ?typeClass, datatype(?object)) AS ?type)
+
+    ${target.annotationFilter}`;
 }
 
 export async function getTargetData(target: Target, targetId: string) {
