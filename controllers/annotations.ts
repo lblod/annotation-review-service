@@ -50,7 +50,6 @@ async function getAnnotationsData(
     PREFIX mu: <http://mu.semte.ch/vocabularies/core/>
     PREFIX prov: <http://www.w3.org/ns/prov#>
     PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
-    PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
 
     SELECT DISTINCT ?annotation ?uuid ?predicate ?object ?agent ?agentName ?type 
     WHERE {
@@ -92,6 +91,12 @@ async function addObjectText(
     })
     .filter((stmt) => stmt !== null);
 
+  if (valueInfo.length === 0) {
+    return annotations.map((annotation) => {
+      return { ...annotation, valueText: annotation.value };
+    });
+  }
+
   const unionStatements = Object.keys(valueTypes)
     .filter((type) => valueInfo.some((info) => info.type === type))
     .map((type) => {
@@ -103,12 +108,6 @@ async function addObjectText(
         }
       `;
     });
-
-  if (valueInfo.length === 0) {
-    return annotations.map((annotation) => {
-      return { ...annotation, valueText: annotation.value };
-    });
-  }
 
   const result = await query(`
     SELECT ?object ?objectText

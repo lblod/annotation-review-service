@@ -64,7 +64,7 @@ pagination is done by query params `page` and `pageSize`
 
 ## Configuration
 
-The configuration specifies the available targets and how to render them. It exports a default object with the following properties:
+The configuration specifies the available targets and how to render them. This repository holds a default config file that is mean to be overwritten when it is used in an application, as every application has its own data model. The config file exports a default object with the following properties:
 
 ### targets
 
