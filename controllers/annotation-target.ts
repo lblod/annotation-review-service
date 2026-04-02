@@ -4,7 +4,7 @@ import { buildAnnotationWhere } from './annotations';
 
 export async function getTargets(
   target: Target,
-  filters: { [filterName: string]: string },
+  _filters: { [filterName: string]: string },
   page: number,
   pageSize: number,
 ) {
@@ -72,7 +72,7 @@ async function getTargetAnnotationCount(target: Target, targetIds: string[]) {
 
 export async function getTargetCount(
   target: Target,
-  filters: { [filterName: string]: string },
+  _filters: { [filterName: string]: string },
 ) {
   // TODO add filters
   const result = await query(`
