@@ -1,9 +1,10 @@
 import { Target } from '../types';
 import { query } from 'mu';
+import { buildAnnotationWhere } from './annotations';
 
 export async function getTargets(
   target: Target,
-  filters: { [filterName: string]: string },
+  _filters: { [filterName: string]: string },
   page: number,
   pageSize: number,
 ) {
@@ -25,17 +26,54 @@ export async function getTargets(
     OFFSET ${offset}
   `);
 
-  return result.results.bindings.map((binding) => ({
-    uri: binding.target.value,
-    id: binding.uuid.value,
-    title: binding.title?.value || '',
-    annotationCount: parseInt(binding.annotationCount.value),
-  }));
+  const targetIds = [];
+  const targets = result.results.bindings.map((binding) => {
+    const id = binding.uuid.value;
+    targetIds.push(id);
+    return {
+      uri: binding.target.value,
+      id,
+      title: binding.title?.value || '',
+      annotationCount: parseInt(binding.annotationCount.value),
+    };
+  });
+
+  const counts = await getTargetAnnotationCount(target, targetIds);
+  return targets.map((t) => {
+    return {
+      ...t,
+      annotationCount: counts[t.id],
+    };
+  });
+}
+
+async function getTargetAnnotationCount(target: Target, targetIds: string[]) {
+  const results = await query(`
+    ${target.prefixes}
+    PREFIX oa: <http://www.w3.org/ns/oa#>
+    PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+    PREFIX mu: <http://mu.semte.ch/vocabularies/core/>
+    PREFIX prov: <http://www.w3.org/ns/prov#>
+    PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
+
+    SELECT ?uuid (COUNT(DISTINCT ?annotation) as ?count) 
+    
+    WHERE {
+      ${buildAnnotationWhere(target, targetIds)}
+    } GROUP BY ?uuid
+  `);
+
+  const targetCountMap = {};
+
+  results.results.bindings.forEach((binding) => {
+    targetCountMap[binding.uuid.value] = parseInt(binding.count.value);
+  });
+  return targetCountMap;
 }
 
 export async function getTargetCount(
   target: Target,
-  filters: { [filterName: string]: string },
+  _filters: { [filterName: string]: string },
 ) {
   // TODO add filters
   const result = await query(`
