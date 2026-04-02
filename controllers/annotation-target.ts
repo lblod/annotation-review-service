@@ -1,15 +1,15 @@
 import { Target } from '../types';
-import { query } from 'mu';
+import { query, sparqlEscapeString, sparqlEscapeUri } from 'mu';
 import { buildAnnotationWhere } from './annotations';
 
 export async function getTargets(
   target: Target,
-  _filters: { [filterName: string]: string },
+  filters: { [filterName: string]: string },
   page: number,
   pageSize: number,
 ) {
   const offset = page * pageSize;
-  // TODO add filters
+
   const result = await query(`
     ${target.prefixes}
     PREFIX oa: <http://www.w3.org/ns/oa#>
@@ -18,7 +18,7 @@ export async function getTargets(
 
     SELECT ?target (SAMPLE(?uuid) AS ?uuid) (SAMPLE(?title) AS ?title) (COUNT(DISTINCT(?annotation)) AS ?annotationCount)
     WHERE {
-      ${getTargetSelector(target)}
+      ${getTargetSelector(target, filters)}
     }
     GROUP BY ?target
     ORDER BY DESC(?annotationCount) ?target
@@ -73,9 +73,8 @@ async function getTargetAnnotationCount(target: Target, targetIds: string[]) {
 
 export async function getTargetCount(
   target: Target,
-  _filters: { [filterName: string]: string },
+  filters: { [filterName: string]: string },
 ) {
-  // TODO add filters
   const result = await query(`
     ${target.prefixes}
     PREFIX oa: <http://www.w3.org/ns/oa#>
@@ -84,14 +83,43 @@ export async function getTargetCount(
 
     SELECT (COUNT(DISTINCT ?target) AS ?count)
     WHERE {
-      ${getTargetSelector(target)}
+      ${getTargetSelector(target, filters)}
     }    
   `);
 
   return parseInt(result.results.bindings[0].count.value);
 }
 
-export function getTargetSelector(target: Target) {
+export function getTargetSelector(
+  target: Target,
+  filters: { [filterName: string]: string },
+) {
+  let filterString = '';
+
+  Object.keys(filters || {}).forEach((key) => {
+    const filterConfig = target.filters[key];
+    if (!filterConfig) {
+      return;
+    }
+    filterString += filterConfig.query;
+    const filterValues = filters[key]
+      .split(',')
+      .map((filterValue) => {
+        switch (filterConfig.type) {
+          case 'uri':
+            return sparqlEscapeUri(filterValue);
+          default:
+            return sparqlEscapeString(filterValue);
+        }
+      })
+      .join('\n');
+    filterString += `
+      VALUES ?${filterConfig.variable} {
+        ${filterValues} 
+      }
+    `;
+  });
+
   return `
       ${target.targetFilter}
 
@@ -101,5 +129,7 @@ export function getTargetSelector(target: Target) {
 
       ?annotation oa:hasTarget ?targetResource .
       ?targetResource oa:source ?target .
+
+      ${filterString}
   `;
 }
