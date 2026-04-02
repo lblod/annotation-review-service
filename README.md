@@ -50,6 +50,8 @@ The response has the format
     {
       "uri": "http://example.org/1ff8e284-070f-4c0b-a390-8eddb3111a96",
       "id": "A612392A-237D-11F1-9258-8C0B7F0C8194",
+      "target": "http://some-target.example.com",
+      "targetId": "777b593d-50be-44e1-b7bc-a2357dd88fc7",
       "type": "http://data.europa.eu/eli/ontology#based_on",
       "value": "http://some-temp-uri.example.com",
       "valueText": "artikel 74 van het Decreet Lokaal Bestuur\n\nStemmen",
@@ -68,6 +70,12 @@ The response has the format
 ```
 
 pagination is done by query params `page` and `pageSize`
+
+### GET /annotations/:type/
+
+Returns all annotations for targets of the given type.
+
+The response has the same format as for `GET /annotations/:type/:id` but without the target section.
 
 ### POST /review/:annotationId/:result
 
