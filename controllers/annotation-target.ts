@@ -49,6 +49,7 @@ export async function getTargets(
 
 async function getTargetAnnotationCount(target: Target, targetIds: string[]) {
   const results = await query(`
+    ${target.prefixes}
     PREFIX oa: <http://www.w3.org/ns/oa#>
     PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
     PREFIX mu: <http://mu.semte.ch/vocabularies/core/>
