@@ -1,5 +1,6 @@
-import { Target } from '../types';
-import { query, sparqlEscapeString } from 'mu';
+import { Annotation, HumanReadableAnnotation, Target } from '../types';
+import { query, sparqlEscapeString, sparqlEscapeUri } from 'mu';
+import config from '../config/config';
 
 export async function getAnnotationCountForTarget(
   target: Target,
@@ -31,7 +32,7 @@ export async function getAnnotationsForTarget(
   ]);
   return {
     target: targetData,
-    annotations,
+    annotations: await addObjectText(annotations),
   };
 }
 
@@ -58,14 +59,74 @@ async function getAnnotationsData(
     LIMIT ${pageSize}
     OFFSET ${offset}
   `);
-  return result.results.bindings.map((binding) => ({
-    uri: binding.annotation.value,
-    id: binding.uuid.value,
-    link: binding.predicate.value,
-    type: binding.type.value,
-    value: binding.object.value,
-    agent: binding.agent.value,
-    agentName: binding.agentName?.value,
+  return result.results.bindings.map(
+    (binding) =>
+      ({
+        uri: binding.annotation.value,
+        id: binding.uuid.value,
+        link: binding.predicate.value,
+        type: binding.type.value,
+        value: binding.object.value,
+        agent: binding.agent.value,
+        agentName: binding.agentName?.value,
+      }) as Annotation,
+  );
+}
+
+async function addObjectText(
+  annotations: Annotation[],
+): Promise<HumanReadableAnnotation[]> {
+  const { valueTypes } = config;
+
+  const valueInfo = annotations
+    .map((annotation) => {
+      const valueType = valueTypes[annotation.type];
+      if (!valueType) {
+        return null;
+      }
+      return {
+        value: annotation.value,
+        type: annotation.type,
+      };
+    })
+    .filter((stmt) => stmt !== null);
+
+  if (valueInfo.length === 0) {
+    return annotations.map((annotation) => {
+      return { ...annotation, valueText: annotation.value };
+    });
+  }
+
+  const unionStatements = Object.keys(valueTypes)
+    .filter((type) => valueInfo.some((info) => info.type === type))
+    .map((type) => {
+      const textPath = valueTypes[type].textPath;
+      return `
+        {
+          ?object a ${sparqlEscapeUri(type)} .
+          ${textPath}
+        }
+      `;
+    });
+
+  const result = await query(`
+    SELECT ?object ?objectText
+    WHERE {
+      VALUES ?object {
+        ${valueInfo.map((t) => sparqlEscapeUri(t.value)).join('\n')}
+      }
+      ${unionStatements.join('\nUNION\n')}      
+    }
+  `);
+
+  const textByObject: { [object: string]: string } = {};
+  result.results.bindings.forEach((binding) => {
+    textByObject[binding.object.value] = binding.objectText.value;
+  });
+
+  return annotations.map((annotation) => ({
+    ...annotation,
+    valueText: textByObject[annotation.value] || annotation.value,
   }));
 }
 
@@ -79,8 +140,9 @@ export function buildAnnotationWhere(target: Target, targetIds: string[]) {
       ${values}
     }
     ?target mu:uuid ?uuid .
-    ?annotation oa:hasTarget ?resource .
-    ?resource oa:source ?target .
+
+    ${target.annotationPath}
+
     ?annotation oa:hasBody ?body .
     ?body rdf:predicate ?predicate .
     ?body rdf:object ?object .

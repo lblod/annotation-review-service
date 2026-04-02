@@ -24,6 +24,10 @@ export default {
           <http://example.org/entity-extraction>
         }
       `,
+      annotationPath: `
+        ?annotation oa:hasTarget ?resource .
+        ?resource oa:source / ^eli:is_realized_by? ?target .
+      `,
       filters: {
         owner: {
           query: `
@@ -43,6 +47,20 @@ export default {
           ?body rdf:object ?annotatedTitle .
         }
         BIND(IF(BOUND(?directTitle), ?directTitle, ?annotatedTitle) AS ?title)
+      `,
+    },
+  },
+  valueTypes: {
+    'http://xmlns.com/foaf/0.1/Person': {
+      name: 'Person',
+      textPath: `
+        ?object <http://www.w3.org/2000/01/rdf-schema#label> ?objectText .
+      `,
+    },
+    'http://www.w3.org/ns/org#Organization': {
+      name: 'Organization',
+      textPath: `
+        ?object <http://www.w3.org/2000/01/rdf-schema#label> ?objectText .
       `,
     },
   },
