@@ -56,13 +56,19 @@ export default {
       textPath: `
         ?object <http://www.w3.org/2000/01/rdf-schema#label> ?objectText .
       `,
+      linkPath: `
+        ?object <http://www.w3.org/2004/02/skos/core#exactMatch> ?objectLink .
+      `,
     },
     'http://www.w3.org/ns/org#Organization': {
       name: 'Organization',
-      textPath: `
-        ?object <http://www.w3.org/2000/01/rdf-schema#label> ?objectText .
-      `,
     },
   },
+  defaultTextPath: `
+        ?object <http://www.w3.org/2000/01/rdf-schema#label> ?objectText .
+  `,
+  defaultLinkPath: `
+        ?object <http://www.w3.org/2004/02/skos/core#exactMatch> ?objectLink .
+  `,
   reviewBodyPrefix: 'http://mu.semte.ch/vocabularies/ext/annotation-review#',
 };

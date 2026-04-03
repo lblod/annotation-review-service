@@ -51,7 +51,9 @@ The response has the format
       "uri": "http://example.org/1ff8e284-070f-4c0b-a390-8eddb3111a96",
       "id": "A612392A-237D-11F1-9258-8C0B7F0C8194",
       "type": "http://data.europa.eu/eli/ontology#based_on",
-      "value": "artikel 74 van het Decreet Lokaal Bestuur\n\nStemmen",
+      "value": "http://some-temp-uri.example.com",
+      "valueText": "artikel 74 van het Decreet Lokaal Bestuur\n\nStemmen",
+      "valueLink": "http://some-dereferenceable-uri.example.com",
       "agent": "http://example.org/entity-extraction",
       "agentName": "NER",
       "counts": {
@@ -116,13 +118,39 @@ The targets hold the available types of target as a json object, with the keys b
 
 The valueTypes hold configuration per type of value for an annotation. This allows you to specify how the value should be rendered to text for a user. This is because some annotation values can be complex, e.g. a period of time, which means the annotation body itself is actually also a URI with a set of different properties.
 
-`valueTypes` is a key-value object where the keys are the uri of the types and the values is the specification of how they should be rendered. In this value, `textPath` is the main attribute. It connects `?object`, the body of the annotation, to a textual representation of it in the variable `?objectText`. For instance
+`valueTypes` is a key-value object where the keys are the uri of the types and the values are an object specifying how they should be rendered. In this value, `textPath` connects `?object`, the body of the annotation, to its human readable textual representation of it in the variable `?objectText`. `?linkPath` specifies how to find the URI for the linked entity, if such a uri exists. For instance
 
 ```json
 {
   "http://xmlns.com/foaf/0.1/Person": {
     "name": "Person",
-    "textPath": "?object <http://xmlns.com/foaf/0.1/name> ?objectText ."
+    "textPath": "?object <http://xmlns.com/foaf/0.1/name> ?objectText .",
+    "linkPath": "?object <http://www.w3.org/2004/02/skos/core#exactMatch> ?objectLink ."
+  },
+  "http://www.w3.org/ns/org#Organization": {
+    "name": "Organization"
   }
 }
 ```
+
+`?textPath` and `?linkPath` are optional. They can also be defaulted on the top level config file.
+
+### defaultTextPath
+
+The default path for all types to find the textual representation of a value. e.g.
+
+````json
+ {
+  "defaultTextPath": "?object <http://www.w3.org/2000/01/rdf-schema#label> ?objectText ."
+ }
+
+
+### defaultLinkPath
+
+The default path for all types to find the URI of the value, e.g. in case of a entity linking annotation. e.g.
+
+```json
+{
+  "defaultLinkPath": "?object <http://www.w3.org/2004/02/skos/core#exactMatch> ?objectLink ."
+}
+````
