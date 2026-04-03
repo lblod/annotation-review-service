@@ -109,7 +109,8 @@ function mergeExtraAnnotationInfo(
     return {
       ...annotation,
       counts,
-      valueText: textByObject[annotation.value] || annotation.value,
+      valueText:
+        textByObject[annotation.uri]?.[annotation.value] || annotation.value,
       valueLink: linkByObject[annotation.value],
     };
   });
@@ -165,6 +166,7 @@ async function getObjectTexts(annotations: Annotation[]) {
         return null;
       }
       return {
+        annotation: annotation.uri,
         value: annotation.value,
         type: annotation.type,
       };
@@ -188,18 +190,29 @@ async function getObjectTexts(annotations: Annotation[]) {
     });
 
   const result = await query(`
-    SELECT ?object ?objectText
+    SELECT ?annotation ?object ?objectText
     WHERE {
-      VALUES ?object {
-        ${valueInfo.map((t) => sparqlEscapeUri(t.value)).join('\n')}
+      VALUES (?annotation ?object) {
+        ${valueInfo
+          .map((t) => {
+            const safeAnnot = sparqlEscapeUri(t.annotation);
+            const safeValue = sparqlEscapeUri(t.value);
+            return `(${safeAnnot} ${safeValue})`;
+          })
+          .join('\n')}
       }
       ${unionStatements.join('\nUNION\n')}      
     }
   `);
 
-  const textByObject: { [object: string]: string } = {};
+  const textByObject: { [annotation: string]: { [Object: string]: string } } =
+    {};
   result.results.bindings.forEach((binding) => {
-    textByObject[binding.object.value] = binding.objectText.value;
+    if (!textByObject[binding.annotation.value]) {
+      textByObject[binding.annotation.value] = {};
+    }
+    textByObject[binding.annotation.value][binding.object.value] =
+      binding.objectText.value;
   });
 
   return textByObject;
