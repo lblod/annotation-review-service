@@ -53,7 +53,7 @@ The response has the format
       "type": "http://data.europa.eu/eli/ontology#based_on",
       "value": "http://some-temp-uri.example.com",
       "valueText": "artikel 74 van het Decreet Lokaal Bestuur\n\nStemmen",
-      "valueLink": "http://some-dereferenceabl-uri.example.com",
+      "valueLink": "http://some-dereferenceable-uri.example.com",
       "agent": "http://example.org/entity-extraction",
       "agentName": "NER",
       "counts": {
@@ -118,7 +118,7 @@ The targets hold the available types of target as a json object, with the keys b
 
 The valueTypes hold configuration per type of value for an annotation. This allows you to specify how the value should be rendered to text for a user. This is because some annotation values can be complex, e.g. a period of time, which means the annotation body itself is actually also a URI with a set of different properties.
 
-`valueTypes` is a key-value object where the keys are the uri of the types and the values is the specification of how they should be rendered. In this value, `textPath` is the main attribute. It connects `?object`, the body of the annotation, to a textual representation of it in the variable `?objectText`. `?linkPath` allows specifying how to find the URI for the linked entity, in case it exists. For instance
+`valueTypes` is a key-value object where the keys are the uri of the types and the values are an object specifying how they should be rendered. In this value, `textPath` connects `?object`, the body of the annotation, to its human readable textual representation of it in the variable `?objectText`. `?linkPath` specifies how to find the URI for the linked entity, if such a uri exists. For instance
 
 ```json
 {
@@ -126,6 +126,9 @@ The valueTypes hold configuration per type of value for an annotation. This allo
     "name": "Person",
     "textPath": "?object <http://xmlns.com/foaf/0.1/name> ?objectText .",
     "linkPath": "?object <http://www.w3.org/2004/02/skos/core#exactMatch> ?objectLink ."
+  },
+  "http://www.w3.org/ns/org#Organization": {
+    "name": "Organization"
   }
 }
 ```
@@ -134,8 +137,20 @@ The valueTypes hold configuration per type of value for an annotation. This allo
 
 ### defaultTextPath
 
-The default path for all types to find the textual representation of a value.
+The default path for all types to find the textual representation of a value. e.g.
+
+````json
+ {
+  "defaultTextPath": "?object <http://www.w3.org/2000/01/rdf-schema#label> ?objectText ."
+ }
+
 
 ### defaultLinkPath
 
-The default path for all types to find the URI of the value, e.g. in case of a entity linking annotation.
+The default path for all types to find the URI of the value, e.g. in case of a entity linking annotation. e.g.
+
+```json
+{
+  "defaultLinkPath": "?object <http://www.w3.org/2004/02/skos/core#exactMatch> ?objectLink ."
+}
+````

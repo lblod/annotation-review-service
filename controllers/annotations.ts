@@ -33,8 +33,14 @@ export async function getAnnotationsForTarget(
     getAnnotationsData(target, targetId, page, pageSize),
   ]);
   const [objectTexts, objectLinks, annotationCounts] = await Promise.all([
-    getObjectTexts(annotations),
-    getObjectLinks(annotations),
+    getObjectPaths(annotations, {
+      pathName: 'textPath',
+      variable: 'objectText',
+    }),
+    getObjectPaths(annotations, {
+      pathName: 'linkPath',
+      variable: 'objectPath',
+    }),
     getAnnotationCounts(
       sessionId,
       annotations.map((annotation) => annotation.id),
@@ -109,7 +115,10 @@ async function getAnnotationsData(
   );
 }
 
-async function getObjectTexts(annotations: Annotation[]) {
+async function getObjectPaths(
+  annotations: Annotation[],
+  { pathName = 'textPath', variable = 'objectText' },
+) {
   const { valueTypes } = config;
 
   const valueInfo = annotations
@@ -129,20 +138,23 @@ async function getObjectTexts(annotations: Annotation[]) {
     return {};
   }
 
+  const defaultPathName = `default${pathName.charAt(0).toUpperCase()}${pathName.substring(1)}`;
+
   const unionStatements = Object.keys(valueTypes)
     .filter((type) => valueInfo.some((info) => info.type === type))
     .map((type) => {
-      const textPath = valueTypes[type].textPath || config.defaultTextPath;
+      const path = valueTypes[type][pathName] || config[defaultPathName];
+
       return `
         {
           ?object a ${sparqlEscapeUri(type)} .
-          ${textPath}
+          ${path}
         }
       `;
     });
 
   const result = await query(`
-    SELECT ?object ?objectText
+    SELECT ?object ?${variable}
     WHERE {
       VALUES ?object {
         ${valueInfo.map((t) => sparqlEscapeUri(t.value)).join('\n')}
@@ -151,62 +163,12 @@ async function getObjectTexts(annotations: Annotation[]) {
     }
   `);
 
-  const textByObject: { [object: string]: string } = {};
+  const pathByObject: { [object: string]: string } = {};
   result.results.bindings.forEach((binding) => {
-    textByObject[binding.object.value] = binding.objectText.value;
+    pathByObject[binding.object.value] = binding[variable].value;
   });
 
-  return textByObject;
-}
-
-async function getObjectLinks(annotations: Annotation[]) {
-  const { valueTypes } = config;
-
-  const valueInfo = annotations
-    .map((annotation) => {
-      const valueType = valueTypes[annotation.type];
-      if (!valueType) {
-        return null;
-      }
-      return {
-        value: annotation.value,
-        type: annotation.type,
-      };
-    })
-    .filter((stmt) => stmt !== null);
-
-  const unionStatements = Object.keys(valueTypes)
-    .filter((type) => valueInfo.some((info) => info.type === type))
-    .map((type) => {
-      const textPath = valueTypes[type].LinkPath || config.defaultLinkPath;
-      return `
-        {
-          ?object a ${sparqlEscapeUri(type)} .
-          ${textPath}
-        }
-      `;
-    });
-
-  if (valueInfo.length === 0) {
-    return {};
-  }
-
-  const result = await query(`
-    SELECT ?object ?objectLink
-    WHERE {
-      VALUES ?object {
-        ${valueInfo.map((t) => sparqlEscapeUri(t.value)).join('\n')}
-      }
-      ${unionStatements.join('\nUNION\n')}      
-    }
-  `);
-
-  const linkByObject: { [object: string]: string } = {};
-  result.results.bindings.forEach((binding) => {
-    linkByObject[binding.object.value] = binding.objectLink.value;
-  });
-
-  return linkByObject;
+  return pathByObject;
 }
 
 export function buildAnnotationWhere(target: Target, targetIds: string[]) {
