@@ -118,7 +118,8 @@ function mergeExtraAnnotationInfo(
     return {
       ...annotation,
       counts,
-      valueText: textByObject[annotation.value] || annotation.value,
+      valueText:
+        textByObject[annotation.uri]?.[annotation.value] || annotation.value,
       valueLink: linkByObject[annotation.value],
     };
   });
@@ -183,6 +184,7 @@ async function getObjectPaths(
         return null;
       }
       return {
+        annotation: annotation.uri,
         value: annotation.value,
         type: annotation.type,
       };
@@ -211,8 +213,14 @@ async function getObjectPaths(
   const result = await query(`
     SELECT ?object ?${variable}
     WHERE {
-      VALUES ?object {
-        ${valueInfo.map((t) => sparqlEscapeUri(t.value)).join('\n')}
+      VALUES (?annotation ?object) {
+        ${valueInfo
+          .map((t) => {
+            const safeAnnot = sparqlEscapeUri(t.annotation);
+            const safeValue = sparqlEscapeUri(t.value);
+            return `(${safeAnnot} ${safeValue})`;
+          })
+          .join('\n')}
       }
       ${unionStatements.join('\nUNION\n')}      
     }
