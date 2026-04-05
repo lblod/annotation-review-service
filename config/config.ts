@@ -66,6 +66,7 @@ export default {
       prefixes: `
         PREFIX eli: <http://data.europa.eu/eli/ontology#>
         PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
+        PREFIX mu: <http://mu.semte.ch/vocabularies/core/>
       `,
       // can also use to filter ?annotation in case we want to filter the kind of annotations to show
       // note that we have to filter by expressions having a work because other expressions are created
@@ -90,12 +91,29 @@ export default {
         ?annotation oa:hasTarget / ^eli:is_realized_by? ?target .
       `,
       filters: {
+        conceptScheme: {
+          query: `
+            ?annotation oa:hasBody ?concept .
+            ?concept skos:inScheme ?scheme .
+            ?scheme mu:uuid ?schemeId.
+          `,
+          variable: 'schemeId',
+          type: 'string',
+        },
+        concept: {
+          query: `
+            ?annotation oa:hasBody ?concept .
+            ?concept mu:uuid ?conceptId.
+          `,
+          type: 'string',
+          variable: 'conceptId',
+        },
         owner: {
           query: `
             ?target oa:hasBody ?body .
-            VALUES ?body { $filterValue } 
           `,
-          type: 'uri[]',
+          variable: 'owner',
+          type: 'uri',
         },
       },
       titlePath: `

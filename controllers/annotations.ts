@@ -1,9 +1,13 @@
-import { Annotation, Target } from '../types';
+import { Annotation, Filters, Target } from '../types';
 import { query, sparqlEscapeString, sparqlEscapeUri } from 'mu';
 import config from '../config/config';
 import { getAnnotationCounts } from './review';
+import { buildFilterString } from '../utils/filters';
 
-export async function getAllAnnotationCountForTarget(target: Target) {
+export async function getAllAnnotationCountForTarget(
+  target: Target,
+  filters = {},
+) {
   const result = await query(`
     ${target.prefixes}
     PREFIX oa: <http://www.w3.org/ns/oa#>
@@ -19,6 +23,8 @@ export async function getAllAnnotationCountForTarget(target: Target) {
       ?action prov:generated ?annotation .
       ?action prov:wasAssociatedWith ?agent .
       ${target.annotationFilter}
+
+      ${buildFilterString(target, filters)}
     }    
   `);
   return parseInt(result.results.bindings[0].count.value);
@@ -27,6 +33,7 @@ export async function getAllAnnotationCountForTarget(target: Target) {
 export async function getAnnotationCountForTarget(
   target: Target,
   targetId: string,
+  filters = {},
 ) {
   const result = await query(`
     ${target.prefixes}
@@ -36,7 +43,7 @@ export async function getAnnotationCountForTarget(
 
     SELECT (COUNT(DISTINCT ?annotation) AS ?count)
     WHERE {
-      ${buildAnnotationWhere(target, [targetId])}
+      ${buildAnnotationWhere(target, [targetId], filters)}
     }    
   `);
   return parseInt(result.results.bindings[0].count.value);
@@ -45,12 +52,13 @@ export async function getAnnotationCountForTarget(
 export async function getAllAnnotationsForTarget(
   sessionId: string,
   target: Target,
+  filters = {} as Filters,
   page: number,
   pageSize: number,
 ) {
   const [targetData, annotations] = await Promise.all([
     getTargetData(target),
-    getAnnotationsData(target, page, pageSize),
+    getAnnotationsData(target, page, pageSize, undefined, filters),
   ]);
   const [textByObject, annotationCounts] = await Promise.all([
     getObjectPaths(annotations, {
@@ -76,12 +84,13 @@ export async function getAnnotationsForTarget(
   sessionId: string,
   target: Target,
   targetId: string,
+  filters = {},
   page: number,
   pageSize: number,
 ) {
   const [targetData, annotations] = await Promise.all([
     getTargetData(target, targetId),
-    getAnnotationsData(target, page, pageSize, targetId),
+    getAnnotationsData(target, page, pageSize, targetId, filters),
   ]);
   const [textByObject, linkByObject, annotationCounts] = await Promise.all([
     getObjectPaths(annotations, {
@@ -130,6 +139,7 @@ async function getAnnotationsData(
   page: number,
   pageSize: number,
   targetId?: string,
+  filters = {} as Filters,
 ) {
   let targetValueFilter = '';
   if (targetId) {
@@ -149,7 +159,7 @@ async function getAnnotationsData(
 
     SELECT DISTINCT ?annotation ?annotationId ?target ?targetId ?predicate ?object ?agent ?agentName ?type 
     WHERE {
-      ${buildAnnotationWhere(target, targetId ? [targetId] : [])}
+      ${buildAnnotationWhere(target, targetId ? [targetId] : [], filters)}
     }    
     ORDER BY ?predicate ?annotation
     LIMIT ${pageSize}
@@ -234,7 +244,11 @@ async function getObjectPaths(
   return pathByObject;
 }
 
-export function buildAnnotationWhere(target: Target, targetIds: string[]) {
+export function buildAnnotationWhere(
+  target: Target,
+  targetIds: string[],
+  filters = {},
+) {
   const values = targetIds
     .map((id) => {
       return sparqlEscapeString(id);
@@ -247,6 +261,8 @@ export function buildAnnotationWhere(target: Target, targetIds: string[]) {
       ${values}
     }`;
   }
+
+  const filterString = buildFilterString(target, filters);
   return `
     ${valuesStatement}
 
@@ -275,6 +291,8 @@ export function buildAnnotationWhere(target: Target, targetIds: string[]) {
       ?object a ?typeClass .
     }
     BIND(IF(BOUND(?typeClass), ?typeClass, datatype(?object)) AS ?type)
+
+    ${filterString}
 
     ${target.annotationFilter}`;
 }
