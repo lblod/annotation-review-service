@@ -23,3 +23,5 @@ export type Annotation = {
   agent: string;
   agentName: string;
 };
+
+export type Filters = { [filterName: string]: string };

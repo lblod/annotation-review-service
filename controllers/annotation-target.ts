@@ -1,6 +1,7 @@
 import { Target } from '../types';
 import { query, sparqlEscapeString, sparqlEscapeUri } from 'mu';
 import { buildAnnotationWhere } from './annotations';
+import { buildFilterString } from '../utils/filters';
 
 export async function getTargets(
   target: Target,
@@ -94,31 +95,7 @@ export function getTargetSelector(
   target: Target,
   filters: { [filterName: string]: string },
 ) {
-  let filterString = '';
-
-  Object.keys(filters || {}).forEach((key) => {
-    const filterConfig = target.filters[key];
-    if (!filterConfig) {
-      return;
-    }
-    filterString += filterConfig.query;
-    const filterValues = filters[key]
-      .split(',')
-      .map((filterValue) => {
-        switch (filterConfig.type) {
-          case 'uri':
-            return sparqlEscapeUri(filterValue);
-          default:
-            return sparqlEscapeString(filterValue);
-        }
-      })
-      .join('\n');
-    filterString += `
-      VALUES ?${filterConfig.variable} {
-        ${filterValues} 
-      }
-    `;
-  });
+  const filterString = buildFilterString(target, filters);
 
   return `
       ${target.targetFilter}
