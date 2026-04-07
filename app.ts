@@ -12,6 +12,7 @@ import {
   getAllAnnotationsForTarget,
 } from './controllers/annotations';
 import { reviewAnnotation } from './controllers/review';
+import { Filters } from './types';
 
 // we want filter[foo]=bar&filter[id]=1
 app.set('query parser', (str) => qs.parse(str, { depth: 10 }));
@@ -33,7 +34,7 @@ app.get('/health', async (_req, res) => {
 
 app.get('/targets/:type', async (req, res) => {
   const type = req.params.type;
-  const filters = req.query.filter as unknown as {};
+  const filters = req.query.filter as unknown as Filters;
 
   const target = config.targets[type];
   if (!target) {
@@ -55,7 +56,7 @@ app.get('/annotations/:type/:id', async (req, res) => {
   const type = req.params.type;
   const id = req.params.id;
   const sessionId = req.get('mu-session-id') as string;
-  const filters = req.query.filter as unknown as any;
+  const filters = req.query.filter as unknown as Filters;
 
   const target = config.targets[type];
   if (!target) {
@@ -77,7 +78,7 @@ app.get('/annotations/:type', async (req, res) => {
   const type = req.params.type;
   const sessionId = req.get('mu-session-id') as string;
 
-  const filters = req.query.filter as unknown as any;
+  const filters = req.query.filter as unknown as Filters;
 
   const target = config.targets[type];
   if (!target) {
