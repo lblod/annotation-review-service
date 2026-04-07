@@ -9,7 +9,10 @@ export function buildFilterString(target: Target, filters: Filters) {
     if (!filterConfig) {
       return;
     }
-    filterString += filterConfig.query;
+    filterString += `
+      FILTER EXISTS {
+        ${filterConfig.query}
+    `;
     const filterValues = filters[key]
       .split(',')
       .map((filterValue) => {
@@ -25,6 +28,7 @@ export function buildFilterString(target: Target, filters: Filters) {
       VALUES ?${filterConfig.variable} {
         ${filterValues} 
       }
+    }
     `;
   });
   return filterString;

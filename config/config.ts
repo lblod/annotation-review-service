@@ -115,6 +115,37 @@ export default {
           variable: 'owner',
           type: 'uri',
         },
+        impact: {
+          query: `
+            ?annotation oa:hasBody ?impact .
+            ?impact mu:uuid ?impactId .
+          `,
+          variable: 'impactId',
+          type: 'string',
+        },
+        year: {
+          query: `
+            { 
+              {
+                ?work eli:is_realized_by ?target .
+                ?work eli:date_document ?date .
+              }
+              UNION
+              {
+                ?target eli:date_document ?date .
+              }
+              UNION 
+              {
+                ?target ^oa:hasTarget / oa:hasBody ?datebody .
+                ?datebody rdf:predicate eli:date_document .
+                ?datebody rdf:object ?date .
+              }
+            }
+            BIND(SUBSTR(STR(?date), 0, 4) AS ?year)
+          `,
+          variable: 'year',
+          type: 'string',
+        },
       },
       titlePath: `
         OPTIONAL {
