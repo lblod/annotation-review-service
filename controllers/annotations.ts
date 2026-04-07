@@ -219,18 +219,19 @@ async function getObjectPaths(
         }
       `;
     });
+  const safeValues = valueInfo
+    .map((t) => {
+      const safeAnnot = sparqlEscapeUri(t.annotation);
+      const safeValue = sparqlEscapeUri(t.value);
+      return `(${safeAnnot} ${safeValue})`;
+    })
+    .join('\n');
 
   const result = await query(`
     SELECT ?object ?${variable}
     WHERE {
       VALUES (?annotation ?object) {
-        ${valueInfo
-          .map((t) => {
-            const safeAnnot = sparqlEscapeUri(t.annotation);
-            const safeValue = sparqlEscapeUri(t.value);
-            return `(${safeAnnot} ${safeValue})`;
-          })
-          .join('\n')}
+        ${safeValues}
       }
       ${unionStatements.join('\nUNION\n')}      
     }

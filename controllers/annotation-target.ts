@@ -1,5 +1,5 @@
 import { Target } from '../types';
-import { query, sparqlEscapeString, sparqlEscapeUri } from 'mu';
+import { query } from 'mu';
 import { buildAnnotationWhere } from './annotations';
 import { buildFilterString } from '../utils/filters';
 
