@@ -25,3 +25,10 @@ export type Annotation = {
 };
 
 export type Filters = { [filterName: string]: string };
+
+export type AnnotationCounts = {
+  [annotationId: string]: {
+    ownReview?: string;
+    [result: string]: number | string | undefined;
+  };
+};

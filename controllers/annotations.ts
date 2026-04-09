@@ -1,4 +1,4 @@
-import { Annotation, Filters, Target } from '../types';
+import { Annotation, AnnotationCounts, Filters, Target } from '../types';
 import { query, sparqlEscapeString, sparqlEscapeUri } from 'mu';
 import config from '../config/config';
 import { getAnnotationCounts } from './review';
@@ -109,11 +109,19 @@ export async function getAnnotationsForTarget(
 }
 
 function mergeExtraAnnotationInfo(
-  annotations,
-  { textByObject = {}, linkByObject = {}, annotationCounts = {} },
+  annotations: Annotation[],
+  {
+    textByObject = {} as {
+      [annotationUri: string]: { [annotationValue: string]: string };
+    },
+    linkByObject = {} as {
+      [annotationUri: string]: string;
+    },
+    annotationCounts = {} as AnnotationCounts,
+  },
 ) {
   return annotations.map((annotation) => {
-    const counts = annotationCounts[annotation.id];
+    const counts = annotationCounts[annotation.id] as unknown as number;
 
     return {
       ...annotation,
@@ -132,12 +140,6 @@ async function getAnnotationsData(
   targetId?: string,
   filters = {} as Filters,
 ) {
-  let targetValueFilter = '';
-  if (targetId) {
-    targetValueFilter = `VALUES ?targetId {
-      ${sparqlEscapeString(targetId)}
-    }`;
-  }
   const offset = page * pageSize;
   const result = await query(`
     ${target.prefixes}
