@@ -61,10 +61,7 @@ export async function getAllAnnotationsForTarget(
     getAnnotationsData(target, page, pageSize, undefined, filters),
   ]);
   const [textByObject, annotationCounts] = await Promise.all([
-    getObjectPaths(annotations, {
-      pathName: 'textPath',
-      variable: 'objectText',
-    }),
+    getObjectTexts(annotations),
     getAnnotationCounts(
       sessionId,
       annotations.map((annotation) => annotation.id),
@@ -93,14 +90,8 @@ export async function getAnnotationsForTarget(
     getAnnotationsData(target, page, pageSize, targetId, filters),
   ]);
   const [textByObject, linkByObject, annotationCounts] = await Promise.all([
-    getObjectPaths(annotations, {
-      pathName: 'textPath',
-      variable: 'objectText',
-    }),
-    getObjectPaths(annotations, {
-      pathName: 'linkPath',
-      variable: 'objectPath',
-    }),
+    getObjectTexts(annotations),
+    getObjectLinks(annotations),
     getAnnotationCounts(
       sessionId,
       annotations.map((annotation) => annotation.id),
@@ -181,10 +172,7 @@ async function getAnnotationsData(
   );
 }
 
-async function getObjectPaths(
-  annotations: Annotation[],
-  { pathName = 'textPath', variable = 'objectText' },
-) {
+async function getObjectTexts(annotations: Annotation[]) {
   const { valueTypes } = config;
 
   const valueInfo = annotations
@@ -205,17 +193,14 @@ async function getObjectPaths(
     return {};
   }
 
-  const defaultPathName = `default${pathName.charAt(0).toUpperCase()}${pathName.substring(1)}`;
-
   const unionStatements = Object.keys(valueTypes)
     .filter((type) => valueInfo.some((info) => info.type === type))
     .map((type) => {
-      const path = valueTypes[type][pathName] || config[defaultPathName];
-
+      const textPath = valueTypes[type].textPath || config.defaultTextPath;
       return `
         {
           ?object a ${sparqlEscapeUri(type)} .
-          ${path}
+          ${textPath}
         }
       `;
     });
@@ -228,7 +213,7 @@ async function getObjectPaths(
     .join('\n');
 
   const result = await query(`
-    SELECT ?object ?${variable}
+    SELECT ?annotation ?object ?objectText
     WHERE {
       VALUES (?annotation ?object) {
         ${safeValues}
@@ -237,12 +222,67 @@ async function getObjectPaths(
     }
   `);
 
-  const pathByObject: { [object: string]: string } = {};
+  const textByObject: { [annotation: string]: { [Object: string]: string } } =
+    {};
   result.results.bindings.forEach((binding) => {
-    pathByObject[binding.object.value] = binding[variable].value;
+    if (!textByObject[binding.annotation.value]) {
+      textByObject[binding.annotation.value] = {};
+    }
+    textByObject[binding.annotation.value][binding.object.value] =
+      binding.objectText.value;
   });
 
-  return pathByObject;
+  return textByObject;
+}
+
+async function getObjectLinks(annotations: Annotation[]) {
+  const { valueTypes } = config;
+
+  const valueInfo = annotations
+    .map((annotation) => {
+      const valueType = valueTypes[annotation.type];
+      if (!valueType) {
+        return null;
+      }
+      return {
+        value: annotation.value,
+        type: annotation.type,
+      };
+    })
+    .filter((stmt) => stmt !== null);
+
+  const unionStatements = Object.keys(valueTypes)
+    .filter((type) => valueInfo.some((info) => info.type === type))
+    .map((type) => {
+      const textPath = valueTypes[type].linkPath || config.defaultLinkPath;
+      return `
+        {
+          ?object a ${sparqlEscapeUri(type)} .
+          ${textPath}
+        }
+      `;
+    });
+
+  if (valueInfo.length === 0) {
+    return {};
+  }
+
+  const result = await query(`
+    SELECT ?object ?objectLink
+    WHERE {
+      VALUES ?object {
+        ${valueInfo.map((t) => sparqlEscapeUri(t.value)).join('\n')}
+      }
+      ${unionStatements.join('\nUNION\n')}      
+    }
+  `);
+
+  const linkByObject: { [object: string]: string } = {};
+  result.results.bindings.forEach((binding) => {
+    linkByObject[binding.object.value] = binding.objectLink.value;
+  });
+
+  return linkByObject;
 }
 
 export function buildAnnotationWhere(
