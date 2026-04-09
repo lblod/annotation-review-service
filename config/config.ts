@@ -189,6 +189,8 @@ export default {
       `,
       linkPath: 'BIND(?object AS ?objectLink)',
     },
+  } as {
+    [typeUri: string]: { name: string; textPath?: string; linkPath?: string };
   },
   defaultTextPath: `
         ?object <http://www.w3.org/2000/01/rdf-schema#label> ?objectText .
