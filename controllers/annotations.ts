@@ -3,6 +3,27 @@ import { query, sparqlEscapeString, sparqlEscapeUri } from 'mu';
 import config from '../config/config';
 import { getAnnotationCounts } from './review';
 
+export async function getAllAnnotationCountForTarget(target: Target) {
+  const result = await query(`
+    ${target.prefixes}
+    PREFIX oa: <http://www.w3.org/ns/oa#>
+    PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+    PREFIX mu: <http://mu.semte.ch/vocabularies/core/>
+
+    SELECT (COUNT(DISTINCT ?annotation) AS ?count)
+    WHERE {
+      ?target mu:uuid ?uuid .
+
+      ${target.annotationPath}
+      
+      ?action prov:generated ?annotation .
+      ?action prov:wasAssociatedWith ?agent .
+      ${target.annotationFilter}
+    }    
+  `);
+  return parseInt(result.results.bindings[0].count.value);
+}
+
 export async function getAnnotationCountForTarget(
   target: Target,
   targetId: string,
@@ -21,6 +42,36 @@ export async function getAnnotationCountForTarget(
   return parseInt(result.results.bindings[0].count.value);
 }
 
+export async function getAllAnnotationsForTarget(
+  sessionId: string,
+  target: Target,
+  page: number,
+  pageSize: number,
+) {
+  const [targetData, annotations] = await Promise.all([
+    getTargetData(target),
+    getAnnotationsData(target, page, pageSize),
+  ]);
+  const [textByObject, annotationCounts] = await Promise.all([
+    getObjectPaths(annotations, {
+      pathName: 'textPath',
+      variable: 'objectText',
+    }),
+    getAnnotationCounts(
+      sessionId,
+      annotations.map((annotation) => annotation.id),
+    ),
+  ]);
+
+  return {
+    target: targetData,
+    annotations: mergeExtraAnnotationInfo(annotations, {
+      textByObject,
+      annotationCounts,
+    }),
+  };
+}
+
 export async function getAnnotationsForTarget(
   sessionId: string,
   target: Target,
@@ -30,9 +81,9 @@ export async function getAnnotationsForTarget(
 ) {
   const [targetData, annotations] = await Promise.all([
     getTargetData(target, targetId),
-    getAnnotationsData(target, targetId, page, pageSize),
+    getAnnotationsData(target, page, pageSize, targetId),
   ]);
-  const [objectTexts, objectLinks, annotationCounts] = await Promise.all([
+  const [textByObject, linkByObject, annotationCounts] = await Promise.all([
     getObjectPaths(annotations, {
       pathName: 'textPath',
       variable: 'objectText',
@@ -49,20 +100,17 @@ export async function getAnnotationsForTarget(
 
   return {
     target: targetData,
-    annotations: mergeExtraAnnotationInfo(
-      annotations,
-      objectTexts,
-      objectLinks,
+    annotations: mergeExtraAnnotationInfo(annotations, {
+      textByObject,
+      linkByObject,
       annotationCounts,
-    ),
+    }),
   };
 }
 
 function mergeExtraAnnotationInfo(
   annotations,
-  textByObject,
-  linkByObject,
-  annotationCounts,
+  { textByObject = {}, linkByObject = {}, annotationCounts = {} },
 ) {
   return annotations.map((annotation) => {
     const counts = annotationCounts[annotation.id];
@@ -78,9 +126,9 @@ function mergeExtraAnnotationInfo(
 
 async function getAnnotationsData(
   target: Target,
-  targetId: string,
   page: number,
   pageSize: number,
+  targetId?: string,
 ) {
   const offset = page * pageSize;
   const result = await query(`
@@ -92,9 +140,9 @@ async function getAnnotationsData(
     PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
     PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
 
-    SELECT DISTINCT ?annotation ?annotationId ?targetId ?predicate ?object ?agent ?agentName ?type 
+    SELECT DISTINCT ?annotation ?annotationId ?target ?targetId ?predicate ?object ?agent ?agentName ?type 
     WHERE {
-      ${buildAnnotationWhere(target, [targetId])}
+      ${buildAnnotationWhere(target, targetId ? [targetId] : [])}
     }    
     ORDER BY ?predicate ?annotation
     LIMIT ${pageSize}
@@ -103,13 +151,14 @@ async function getAnnotationsData(
   return result.results.bindings.map(
     (binding) =>
       ({
+        target: binding.target.value,
+        targetId: binding.targetId.value,
         uri: binding.annotation.value,
         id: binding.annotationId.value,
-        targetId: binding.targetId.value,
-        link: binding.predicate.value,
-        type: binding.type.value,
+        link: binding.predicate?.value,
+        type: binding.type?.value,
         value: binding.object.value,
-        agent: binding.agent.value,
+        agent: binding.agent?.value,
         agentName: binding.agentName?.value,
       }) as Annotation,
   );
@@ -177,18 +226,32 @@ export function buildAnnotationWhere(target: Target, targetIds: string[]) {
       return sparqlEscapeString(id);
     })
     .join('\n');
-  return `VALUES ?targetId {
+
+  let valuesStatement = '';
+  if (targetIds.length > 0) {
+    valuesStatement = `VALUES ?targetId {
       ${values}
-    }
+    }`;
+  }
+  return `
+    ${valuesStatement}
+
     ?target mu:uuid ?targetId .
 
     ${target.annotationPath}
 
-    ?annotation oa:hasBody ?body .
     ?annotation mu:uuid ?annotationId .
-    
-    ?body rdf:predicate ?predicate .
-    ?body rdf:object ?object .
+    {
+      ?annotation oa:hasBody ?body .
+      ?body rdf:predicate ?predicate .
+      ?body rdf:object ?object .
+    } UNION {
+      ?annotation oa:hasBody ?object .
+      FILTER NOT EXISTS {
+        ?object rdf:object ?something .
+      }
+    }
+
     ?action prov:generated ?annotation .
     ?action prov:wasAssociatedWith ?agent .
     OPTIONAL {
@@ -202,7 +265,14 @@ export function buildAnnotationWhere(target: Target, targetIds: string[]) {
     ${target.annotationFilter}`;
 }
 
-export async function getTargetData(target: Target, targetId: string) {
+export async function getTargetData(target: Target, targetId?: string) {
+  let targetValueFilter = '';
+  if (targetId) {
+    targetValueFilter = `VALUES ?uuid {
+      ${sparqlEscapeString(targetId)}
+    }`;
+  }
+
   const result = await query(`
     ${target.prefixes}
     PREFIX oa: <http://www.w3.org/ns/oa#>
@@ -211,9 +281,7 @@ export async function getTargetData(target: Target, targetId: string) {
     
     SELECT ?target ?title ?uuid
     WHERE {
-      VALUES ?uuid {
-        ${sparqlEscapeString(targetId)}
-      }
+      ${targetValueFilter}
       ?target mu:uuid ?uuid .
       ${target.targetFilter}
       ${target.titlePath}
