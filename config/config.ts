@@ -113,7 +113,13 @@ export default {
         },
         owner: {
           query: `
-            ?target oa:hasBody ?body .
+            {
+               ?work eli:is_realized_by ?target .
+               ?work eli:passed_by ?org .
+               ?owner <http://www.w3.org/ns/org#hasSubOrganization> ?org .
+             } UNION {
+               ?target <http://mu.semte.ch/vocabularies/ext/importedFor> ?owner .
+            }
           `,
           variable: 'owner',
           type: 'uri',
