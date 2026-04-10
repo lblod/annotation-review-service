@@ -33,3 +33,19 @@ export function buildFilterString(target: Target, filters: Filters) {
   });
   return filterString;
 }
+
+export function buildFilterAlreadyReviewed(
+  sessionId: string,
+  filters: Filters,
+) {
+  if (!filters.ignoreAlreadyReviewed) {
+    return '';
+  }
+
+  return `
+    FILTER NOT EXISTS {
+      ?ownReview <http://www.w3.org/ns/oa#hasTarget> ?annotation .
+      ?ownReview <http://purl.org/dc/terms/creator> ${sparqlEscapeUri(sessionId)}
+    }
+  `;
+}
