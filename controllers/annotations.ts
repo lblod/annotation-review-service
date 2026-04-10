@@ -355,7 +355,7 @@ export function buildAnnotationWhere(
     OPTIONAL {
       ?object a ?typeClass .
     }
-    BIND(IF(BOUND(?typeClass), ?typeClass, datatype(?object)) AS ?type)
+    BIND(IF(isIRI(?typeClass), ?typeClass, datatype(?object)) AS ?type)
 
     ${filterString}
 
