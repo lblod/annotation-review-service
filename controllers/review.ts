@@ -1,5 +1,6 @@
 import { query, update, sparqlEscapeString, sparqlEscapeUri, uuid } from 'mu';
 import config from '../config/config';
+import { AnnotationCounts } from '../types';
 
 export async function reviewAnnotation(
   annotationId: string,
@@ -104,12 +105,7 @@ export async function getAnnotationCounts(
     GROUP BY ?annotationId ?ownResult ?reviewResult
   `);
 
-  const counts: {
-    [annotationId: string]: {
-      ownReview?: string;
-      [result: string]: number | string;
-    };
-  } = {};
+  const counts: AnnotationCounts = {};
   result.results.bindings.forEach((binding) => {
     const result = binding.reviewResult.value.replace(
       config.reviewBodyPrefix,
