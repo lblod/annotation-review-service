@@ -4,7 +4,8 @@ export type Target = {
   filters: {
     [filterName: string]: {
       query: string;
-      type: 'uri[]' | 'string';
+      variable: string;
+      type: 'uri' | 'string';
     };
   };
   label: string;

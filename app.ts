@@ -1,4 +1,5 @@
 import { app } from 'mu';
+import qs from 'qs';
 
 import express, { Request, ErrorRequestHandler } from 'express';
 import bodyParser from 'body-parser';
@@ -11,6 +12,9 @@ import {
   getAllAnnotationsForTarget,
 } from './controllers/annotations';
 import { reviewAnnotation } from './controllers/review';
+
+// we want filter[foo]=bar&filter[id]=1
+app.set('query parser', (str) => qs.parse(str, { depth: 10 }));
 
 app.use(
   bodyParser.json({
@@ -29,6 +33,7 @@ app.get('/health', async (_req, res) => {
 
 app.get('/targets/:type', async (req, res) => {
   const type = req.params.type;
+  const filters = req.query.filter;
 
   const target = config.targets[type];
   if (!target) {
@@ -39,8 +44,8 @@ app.get('/targets/:type', async (req, res) => {
   const pageSize = parseInt(req.query.pageSize as string) || 10;
 
   const [count, targets] = await Promise.all([
-    getTargetCount(target, {}),
-    getTargets(target, {}, page, pageSize),
+    getTargetCount(target, filters),
+    getTargets(target, filters, page, pageSize),
   ]);
 
   res.send({ targets, count });

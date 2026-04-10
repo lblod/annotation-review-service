@@ -114,8 +114,16 @@ The targets hold the available types of target as a json object, with the keys b
   "targetFilter": "?target a eli:Expression .",
   // some sparql snippet to be used to filter the targets, available variables are ?annotation, ?agent
   "annotationFilter": "VALUES ?agent {   <http://example.org/entity-extraction>  }",
-  // TODO this format is still unstable, it will be the possible filters to be passed in by the frontend
-  "filters": {},
+  // filters that can be added to the target request by adding &<filterName>=<filterValue1,filterValue1> to the request params
+  "filters": {
+    "filterName": {
+      "query": "{ ?target ext:importedFor ?municipality . }",
+      // the variable name used in the query part to set values for
+      "variable": "municipality",
+      // type can be uri or string
+      "type": "uri"
+    }
+  },
   // The path to get the title of a target, can be complex if the titles themselves are annotations,
   // see example config for such a case
   "titlePath": "?target eli:title ?title ."
