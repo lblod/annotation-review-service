@@ -23,3 +23,12 @@ export type Annotation = {
   agent: string;
   agentName: string;
 };
+
+export type Filters = { [filterName: string]: string };
+
+export type AnnotationCounts = {
+  [annotationId: string]: {
+    ownReview?: string;
+    [result: string]: number | string | undefined;
+  };
+};
