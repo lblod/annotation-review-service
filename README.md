@@ -33,6 +33,8 @@ The response has the format
 
 pagination is done by query params `page` and `pageSize`
 
+For filtering, this method accepts query params of the format `?filter[name]=value1,value2&filter[name2]=value3` where the names of the filters are defined in configuration using `targets.filters`.
+
 ### GET /annotations/:type/:id
 
 Returns the annotations for the given target type for the target with the given id.
@@ -71,11 +73,13 @@ The response has the format
 
 pagination is done by query params `page` and `pageSize`
 
+For filtering, this method accepts query params of the format `?filter[name]=value1,value2&filter[name2]=value3` where the names of the filters are defined in configuration using `targets.filters`.
+
 ### GET /annotations/:type/
 
 Returns all annotations for targets of the given type.
 
-The response has the same format as for `GET /annotations/:type/:id` but without the target section.
+The response has the same format as for `GET /annotations/:type/:id` but without the target section. It accepts the same query params.
 
 ### POST /review/:annotationId/:result
 
@@ -129,6 +133,8 @@ The targets hold the available types of target as a json object, with the keys b
   "titlePath": "?target eli:title ?title ."
 }
 ```
+
+The only reserved filter name is `ignoreAlreadyReviewed` which, if set to true filters out the annotations that were already reviewed in the current session.
 
 ### valueTypes
 

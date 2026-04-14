@@ -15,7 +15,7 @@ import { reviewAnnotation } from './controllers/review';
 import { Filters } from './types';
 
 // we want filter[foo]=bar&filter[id]=1
-app.set('query parser', (str) => qs.parse(str, { depth: 10 }));
+app.set('query parser', (str: string) => qs.parse(str, { depth: 10 }));
 
 app.use(
   bodyParser.json({
@@ -67,7 +67,7 @@ app.get('/annotations/:type/:id', async (req, res) => {
   const pageSize = parseInt(req.query.pageSize as string) || 10;
 
   const [annotationCount, annotations] = await Promise.all([
-    getAnnotationCountForTarget(target, id),
+    getAnnotationCountForTarget(sessionId, target, id, filters),
     getAnnotationsForTarget(sessionId, target, id, filters, page, pageSize),
   ]);
 
@@ -89,7 +89,7 @@ app.get('/annotations/:type', async (req, res) => {
   const pageSize = parseInt(req.query.pageSize as string) || 10;
 
   const [annotationCount, annotations] = await Promise.all([
-    getAllAnnotationCountForTarget(target, filters),
+    getAllAnnotationCountForTarget(sessionId, target, filters),
     getAllAnnotationsForTarget(sessionId, target, filters, page, pageSize),
   ]);
 

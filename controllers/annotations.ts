@@ -2,12 +2,17 @@ import { Annotation, AnnotationCounts, Filters, Target } from '../types';
 import { query, sparqlEscapeString, sparqlEscapeUri } from 'mu';
 import config from '../config/config';
 import { getAnnotationCounts } from './review';
-import { buildFilterString } from '../utils/filters';
+import {
+  buildFilterAlreadyReviewed,
+  buildFilterString,
+} from '../utils/filters';
 
 export async function getAllAnnotationCountForTarget(
+  sessionId: string,
   target: Target,
   filters = {},
 ) {
+  const filterAlreadyReviewed = buildFilterAlreadyReviewed(sessionId, filters);
   const result = await query(`
     ${target.prefixes}
     PREFIX oa: <http://www.w3.org/ns/oa#>
@@ -20,17 +25,31 @@ export async function getAllAnnotationCountForTarget(
 
       ${target.annotationPath}
       
+      {
+        ?annotation oa:hasBody ?body .
+        ?body rdf:predicate ?predicate .
+        ?body rdf:object ?object .
+      } UNION {
+        ?annotation oa:hasBody ?object .
+        FILTER NOT EXISTS {
+          ?object rdf:object ?something .
+        }
+      }
+        
       ?action prov:generated ?annotation .
       ?action prov:wasAssociatedWith ?agent .
       ${target.annotationFilter}
 
       ${buildFilterString(target, filters)}
-    }    
+
+      ${filterAlreadyReviewed}
+    } 
   `);
   return parseInt(result.results.bindings[0].count.value);
 }
 
 export async function getAnnotationCountForTarget(
+  sessionId: string,
   target: Target,
   targetId: string,
   filters = {},
@@ -44,6 +63,7 @@ export async function getAnnotationCountForTarget(
     SELECT (COUNT(DISTINCT ?annotation) AS ?count)
     WHERE {
       ${buildAnnotationWhere(target, [targetId], filters)}
+      ${buildFilterAlreadyReviewed(sessionId, filters)}
     }    
   `);
   return parseInt(result.results.bindings[0].count.value);
@@ -58,7 +78,7 @@ export async function getAllAnnotationsForTarget(
 ) {
   const [targetData, annotations] = await Promise.all([
     getTargetData(target),
-    getAnnotationsData(target, page, pageSize, undefined, filters),
+    getAnnotationsData(sessionId, target, page, pageSize, undefined, filters),
   ]);
   const [textByObject, annotationCounts] = await Promise.all([
     getObjectTexts(annotations),
@@ -87,7 +107,7 @@ export async function getAnnotationsForTarget(
 ) {
   const [targetData, annotations] = await Promise.all([
     getTargetData(target, targetId),
-    getAnnotationsData(target, page, pageSize, targetId, filters),
+    getAnnotationsData(sessionId, target, page, pageSize, targetId, filters),
   ]);
   const [textByObject, linkByObject, annotationCounts] = await Promise.all([
     getObjectTexts(annotations),
@@ -134,6 +154,7 @@ function mergeExtraAnnotationInfo(
 }
 
 async function getAnnotationsData(
+  sessionId: string,
   target: Target,
   page: number,
   pageSize: number,
@@ -153,6 +174,7 @@ async function getAnnotationsData(
     SELECT DISTINCT ?annotation ?annotationId ?target ?targetId ?predicate ?object ?agent ?agentName ?type 
     WHERE {
       ${buildAnnotationWhere(target, targetId ? [targetId] : [], filters)}
+      ${buildFilterAlreadyReviewed(sessionId, filters)}
     }    
     ORDER BY ?predicate ?annotation
     LIMIT ${pageSize}
@@ -333,7 +355,7 @@ export function buildAnnotationWhere(
     OPTIONAL {
       ?object a ?typeClass .
     }
-    BIND(IF(BOUND(?typeClass), ?typeClass, datatype(?object)) AS ?type)
+    BIND(IF(isIRI(?typeClass), ?typeClass, datatype(?object)) AS ?type)
 
     ${filterString}
 
