@@ -161,11 +161,11 @@ The valueTypes hold configuration per type of value for an annotation. This allo
 
 The default path for all types to find the textual representation of a value. e.g.
 
-````json
+```json
  {
   "defaultTextPath": "?object <http://www.w3.org/2000/01/rdf-schema#label> ?objectText ."
  }
-
+```
 
 ### defaultLinkPath
 
