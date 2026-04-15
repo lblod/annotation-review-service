@@ -1,9 +1,9 @@
 {
-  "name": "mandataris-service",
-  "version": "0.0.3",
+  "name": "annotation-review-service",
+  "version": "0.0.0",
   "type": "module",
-  "description": "Service to handle backend business logic for mandataris instances",
-  "main": "app.js",
+  "description": "Service that manages annotations and their targets.",
+  "main": "app.ts",
   "author": "redpencil.io",
   "license": "MIT",
   "devDependencies": {
