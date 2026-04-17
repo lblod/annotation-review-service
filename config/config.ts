@@ -24,12 +24,13 @@ export default {
       annotationFilter: `
         VALUES ?agent {
           <http://example.org/entity-extraction>
+          <http://example.org/segmentation>
           <http://example.org/named-entity-linking>
         }
       `,
       annotationPath: `
         ?annotation oa:hasTarget ?resource .
-        ?resource oa:source / ^eli:is_realized_by? ?target .
+        ?resource oa:hasSource / ^eli:is_realized_by? ?target .
       `,
       filters: {
         municipality: {
@@ -50,7 +51,7 @@ export default {
           ?target eli:title ?directTitle .
         }
         OPTIONAL {
-          ?target ^oa:hasTarget / oa:hasBody ?body .
+          ?target ^oa:hasSource / ^oa:hasTarget / oa:hasBody ?body .
           ?body rdf:predicate eli:title .
           ?body rdf:object ?annotatedTitle .
         }
@@ -91,7 +92,18 @@ export default {
 
       // these annotations are linking directly to the expression
       annotationPath: `
-        ?annotation oa:hasTarget / ^eli:is_realized_by? ?target .
+        {  
+          ?annotation oa:hasTarget ?target .
+          ?target a eli:Expression . 
+        }
+        UNION 
+        {
+          ?annotation oa:hasTarget / ^eli:is_realized_by ?target .
+          FILTER NOT EXISTS {
+            ?annotation oa:hasTarget ?expression .
+            ?expression a eli:Expression.
+          }
+        }
       `,
       filters: {
         conceptScheme: {
@@ -161,7 +173,7 @@ export default {
           ?target eli:title ?directTitle .
         }
         OPTIONAL {
-          ?target ^oa:hasTarget / oa:hasBody ?body .
+          ?target ^oa:hasSource / ^oa:hasTarget / oa:hasBody ?body .
           ?body rdf:predicate eli:title .
           ?body rdf:object ?annotatedTitle .
         }
