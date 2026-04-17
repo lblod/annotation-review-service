@@ -17,19 +17,23 @@ export default {
       // filtering on expressions that have som sort of title too (regular or annotation)
       targetFilter: `
         ?target a eli:Expression .
+        FILTER NOT EXISTS {
+          ?original <http://purl.org/linguistics/gold/translation> ?target .
+        }
         ?work eli:is_realized_by ?target .
         FILTER (BOUND(?title))
       `,
       // can use to filter annotations for a given target, need to fix the set of agents once we have final uris for them
       annotationFilter: `
-        VALUES ?agent {
-          <http://example.org/entity-extraction>
-          <http://example.org/named-entity-linking>
+        VALUES ?agent {          
+          <http://data.lblod.info/id/ai-components/entity-extraction>
+          <http://data.lblod.info/id/ai-components/segmentation>
+          <http://data.lblod.info/id/ai-components/linking>
         }
       `,
       annotationPath: `
         ?annotation oa:hasTarget ?resource .
-        ?resource oa:source / ^eli:is_realized_by? ?target .
+        ?resource oa:hasSource / ^eli:is_realized_by? ?target .
       `,
       filters: {
         municipality: {
@@ -50,7 +54,7 @@ export default {
           ?target eli:title ?directTitle .
         }
         OPTIONAL {
-          ?target ^oa:hasTarget / oa:hasBody ?body .
+          ?target ^oa:hasSource / ^oa:hasTarget / oa:hasBody ?body .
           ?body rdf:predicate eli:title .
           ?body rdf:object ?annotatedTitle .
         }
@@ -75,6 +79,9 @@ export default {
       targetFilter: `
         ?target a eli:Expression .
         ?work eli:is_realized_by ?target .
+        FILTER NOT EXISTS {
+          ?original <http://purl.org/linguistics/gold/translation> ?target .
+        }
         FILTER (BOUND(?title))
       `,
       // can use to filter annotations for a given target, need to fix the set of agents once we have final uris for them
@@ -91,7 +98,18 @@ export default {
 
       // these annotations are linking directly to the expression
       annotationPath: `
-        ?annotation oa:hasTarget / ^eli:is_realized_by? ?target .
+        {  
+          ?annotation oa:hasTarget ?target .
+          ?target a eli:Expression . 
+        }
+        UNION 
+        {
+          ?annotation oa:hasTarget / ^eli:is_realized_by ?target .
+          FILTER NOT EXISTS {
+            ?annotation oa:hasTarget ?expression .
+            ?expression a eli:Expression.
+          }
+        }
       `,
       filters: {
         conceptScheme: {
@@ -161,7 +179,7 @@ export default {
           ?target eli:title ?directTitle .
         }
         OPTIONAL {
-          ?target ^oa:hasTarget / oa:hasBody ?body .
+          ?target ^oa:hasSource / ^oa:hasTarget / oa:hasBody ?body .
           ?body rdf:predicate eli:title .
           ?body rdf:object ?annotatedTitle .
         }
