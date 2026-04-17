@@ -17,15 +17,18 @@ export default {
       // filtering on expressions that have som sort of title too (regular or annotation)
       targetFilter: `
         ?target a eli:Expression .
+        FILTER NOT EXISTS {
+          ?original <http://purl.org/linguistics/gold/translation> ?target .
+        }
         ?work eli:is_realized_by ?target .
         FILTER (BOUND(?title))
       `,
       // can use to filter annotations for a given target, need to fix the set of agents once we have final uris for them
       annotationFilter: `
-        VALUES ?agent {
-          <http://example.org/entity-extraction>
-          <http://example.org/segmentation>
-          <http://example.org/named-entity-linking>
+        VALUES ?agent {          
+          <http://data.lblod.info/id/ai-components/entity-extraction>
+          <http://data.lblod.info/id/ai-components/segmentation>
+          <http://data.lblod.info/id/ai-components/linking>
         }
       `,
       annotationPath: `
@@ -76,6 +79,9 @@ export default {
       targetFilter: `
         ?target a eli:Expression .
         ?work eli:is_realized_by ?target .
+        FILTER NOT EXISTS {
+          ?original <http://purl.org/linguistics/gold/translation> ?target .
+        }
         FILTER (BOUND(?title))
       `,
       // can use to filter annotations for a given target, need to fix the set of agents once we have final uris for them
