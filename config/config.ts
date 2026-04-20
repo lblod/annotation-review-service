@@ -58,7 +58,7 @@ export default {
           ?body rdf:predicate eli:title .
           ?body rdf:object ?annotatedTitle .
         }
-        BIND(IF(BOUND(?directTitle), ?directTitle, ?annotatedTitle) AS ?title)
+        BIND(IF(BOUND(?directTitle), ?directTitle, IF(BOUND(?annotatedTitle), ?annotatedTitle, "<no title found>")) AS ?title)
       `,
     },
     'expression-label': {
