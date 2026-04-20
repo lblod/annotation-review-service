@@ -90,7 +90,7 @@ export default {
         }
 
         VALUES ?agent {
-          <http://example.org/model_annotation>
+          <http://data.lblod.info/id/ai-components/model-annotation>
         }
       `,
 
@@ -205,9 +205,16 @@ export default {
       textPath: `
         ?object <http://www.w3.org/2004/02/skos/core#prefLabel> ?prefLabel .
         OPTIONAL {
-          ?annotation oa:hasBody ?impact.
+          ?annotation oa:hasBody ?impact .
         }
-        BIND(IF(BOUND(?impact) && ?impact IN (<http://mu.semte.ch/vocabularies/ext/impact/negative>, <http://mu.semte.ch/vocabularies/ext/impact/positive>), CONCAT(?prefLabel, " (",SUBSTR(STR(?impact), 44),")"),?prefLabel) AS ?objectText)
+        OPTIONAL {
+          ?object skos:notation ?notation .
+        }
+        BIND(
+          IF(BOUND(?impact) && ?impact IN (<http://mu.semte.ch/vocabularies/ext/impact/negative>, <http://mu.semte.ch/vocabularies/ext/impact/positive>),
+             IF(BOUND(?notation), CONCAT(?notation, ": ", ?prefLabel, " (",SUBSTR(STR(?impact), 44),")"), CONCAT(?prefLabel, " (",SUBSTR(STR(?impact), 44),")")),
+             IF(BOUND(?notation), CONCAT(?notation, ": ", ?prefLabel), ?prefLabel)
+          ) AS ?objectText)
       `,
       linkPath: 'BIND(?object AS ?objectLink)',
     },
