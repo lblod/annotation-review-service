@@ -21,7 +21,6 @@ export default {
           ?original <http://purl.org/linguistics/gold/translation> ?target .
         }
         ?work eli:is_realized_by ?target .
-        FILTER (BOUND(?title))
       `,
       // can use to filter annotations for a given target, need to fix the set of agents once we have final uris for them
       annotationFilter: `
@@ -58,7 +57,7 @@ export default {
           ?body rdf:predicate eli:title .
           ?body rdf:object ?annotatedTitle .
         }
-        BIND(IF(BOUND(?directTitle), ?directTitle, IF(BOUND(?annotatedTitle), ?annotatedTitle, "<no title found>")) AS ?title)
+        BIND(IF(BOUND(?directTitle), ?directTitle, ?annotatedTitle) AS ?title)
       `,
     },
     'expression-label': {
@@ -82,7 +81,6 @@ export default {
         FILTER NOT EXISTS {
           ?original <http://purl.org/linguistics/gold/translation> ?target .
         }
-        FILTER (BOUND(?title))
       `,
       // can use to filter annotations for a given target, need to fix the set of agents once we have final uris for them
       annotationFilter: `
