@@ -29,6 +29,7 @@ export default {
           <http://data.lblod.info/id/ai-components/segmentation>
           <http://data.lblod.info/id/ai-components/linking>
         }
+        FILTER(?type NOT IN (<http://www.w3.org/ns/locn#Address>, <https://data.vlaanderen.be/ns/adres#Straatnaam>, <http://www.wikidata.org/entity/Q2785216>, <http://www.wikidata.org/entity/Q123705> ))
       `,
       annotationPath: `
         ?annotation oa:hasTarget ?resource .
@@ -197,6 +198,9 @@ export default {
     },
     'http://www.w3.org/ns/org#Organization': {
       name: 'Organization',
+    },
+    'http://purl.org/dc/terms/Location': {
+      name: 'Location',
     },
     'http://www.w3.org/2004/02/skos/core#Concept': {
       name: 'Concept',
