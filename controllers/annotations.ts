@@ -189,9 +189,10 @@ async function getAnnotationsData(
         id: binding.annotationId.value,
         link: binding.predicate?.value,
         type:
-          // virtuoso doesn't return datatype for langstrings
+          // virtuoso doesn't return datatype for langstrings,
+          // the type in mu-types seems incomplete, but the xml:lang is there in that case
           binding.type?.value ||
-          ((binding.object as unknown as any)['xml:lang']
+          ((binding.object as unknown as { 'xml:lang': string })['xml:lang']
             ? 'http://www.w3.org/2001/XMLSchema#string'
             : undefined),
         value: binding.object.value,
