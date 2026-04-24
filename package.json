@@ -23,7 +23,6 @@
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "dependencies": {
-    "@lblod/mu-auth-sudo": "^0.6.1",
     "body-parser": "^1.19.0",
     "express-promise-router": "^4.1.1",
     "multer": "^1.4.5-lts.1",
