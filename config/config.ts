@@ -17,19 +17,23 @@ export default {
       // filtering on expressions that have som sort of title too (regular or annotation)
       targetFilter: `
         ?target a eli:Expression .
+        FILTER NOT EXISTS {
+          ?original <http://purl.org/linguistics/gold/translation> ?target .
+        }
         ?work eli:is_realized_by ?target .
-        FILTER (BOUND(?title))
       `,
       // can use to filter annotations for a given target, need to fix the set of agents once we have final uris for them
       annotationFilter: `
-        VALUES ?agent {
-          <http://example.org/entity-extraction>
-          <http://example.org/named-entity-linking>
+        VALUES ?agent {          
+          <http://data.lblod.info/id/ai-components/entity-extraction>
+          <http://data.lblod.info/id/ai-components/segmentation>
+          <http://data.lblod.info/id/ai-components/linking>
         }
+        FILTER(?type NOT IN (<http://www.w3.org/ns/locn#Address>, <https://data.vlaanderen.be/ns/adres#Straatnaam>, <http://www.wikidata.org/entity/Q2785216>, <http://www.wikidata.org/entity/Q123705> ))
       `,
       annotationPath: `
         ?annotation oa:hasTarget ?resource .
-        ?resource oa:source / ^eli:is_realized_by? ?target .
+        ?resource oa:hasSource / ^eli:is_realized_by? ?target .
       `,
       filters: {
         municipality: {
@@ -50,7 +54,7 @@ export default {
           ?target eli:title ?directTitle .
         }
         OPTIONAL {
-          ?target ^oa:hasTarget / oa:hasBody ?body .
+          ?target ^oa:hasSource / ^oa:hasTarget / oa:hasBody ?body .
           ?body rdf:predicate eli:title .
           ?body rdf:object ?annotatedTitle .
         }
@@ -75,7 +79,9 @@ export default {
       targetFilter: `
         ?target a eli:Expression .
         ?work eli:is_realized_by ?target .
-        FILTER (BOUND(?title))
+        FILTER NOT EXISTS {
+          ?original <http://purl.org/linguistics/gold/translation> ?target .
+        }
       `,
       // can use to filter annotations for a given target, need to fix the set of agents once we have final uris for them
       annotationFilter: `
@@ -85,13 +91,24 @@ export default {
         }
 
         VALUES ?agent {
-          <http://example.org/model_annotation>
+          <http://data.lblod.info/id/ai-components/model-annotation>
         }
       `,
 
       // these annotations are linking directly to the expression
       annotationPath: `
-        ?annotation oa:hasTarget / ^eli:is_realized_by? ?target .
+        {  
+          ?annotation oa:hasTarget ?target .
+          ?target a eli:Expression . 
+        }
+        UNION 
+        {
+          ?annotation oa:hasTarget / ^eli:is_realized_by ?target .
+          FILTER NOT EXISTS {
+            ?annotation oa:hasTarget ?expression .
+            ?expression a eli:Expression.
+          }
+        }
       `,
       filters: {
         conceptScheme: {
@@ -161,7 +178,7 @@ export default {
           ?target eli:title ?directTitle .
         }
         OPTIONAL {
-          ?target ^oa:hasTarget / oa:hasBody ?body .
+          ?target ^oa:hasSource / ^oa:hasTarget / oa:hasBody ?body .
           ?body rdf:predicate eli:title .
           ?body rdf:object ?annotatedTitle .
         }
@@ -182,6 +199,9 @@ export default {
     'http://www.w3.org/ns/org#Organization': {
       name: 'Organization',
     },
+    'http://purl.org/dc/terms/Location': {
+      name: 'Location',
+    },
     'http://www.w3.org/2004/02/skos/core#Concept': {
       name: 'Concept',
       // concept links can have a secondary body with the impact on the concept
@@ -189,9 +209,16 @@ export default {
       textPath: `
         ?object <http://www.w3.org/2004/02/skos/core#prefLabel> ?prefLabel .
         OPTIONAL {
-          ?annotation oa:hasBody ?impact.
+          ?annotation oa:hasBody ?impact .
         }
-        BIND(IF(BOUND(?impact) && ?impact IN (<http://mu.semte.ch/vocabularies/ext/impact/negative>, <http://mu.semte.ch/vocabularies/ext/impact/positive>), CONCAT(?prefLabel, " (",SUBSTR(STR(?impact), 44),")"),?prefLabel) AS ?objectText)
+        OPTIONAL {
+          ?object skos:notation ?notation .
+        }
+        BIND(
+          IF(BOUND(?impact) && ?impact IN (<http://mu.semte.ch/vocabularies/ext/impact/negative>, <http://mu.semte.ch/vocabularies/ext/impact/positive>),
+             IF(BOUND(?notation), CONCAT(?notation, ": ", ?prefLabel, " (",SUBSTR(STR(?impact), 44),")"), CONCAT(?prefLabel, " (",SUBSTR(STR(?impact), 44),")")),
+             IF(BOUND(?notation), CONCAT(?notation, ": ", ?prefLabel), ?prefLabel)
+          ) AS ?objectText)
       `,
       linkPath: 'BIND(?object AS ?objectLink)',
     },
