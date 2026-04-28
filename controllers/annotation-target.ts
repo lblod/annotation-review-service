@@ -27,7 +27,7 @@ export async function getTargets(
     OFFSET ${offset}
   `);
 
-  const targetIds = [];
+  const targetIds = [] as string[];
   const targets = result.results.bindings.map((binding) => {
     const id = binding.uuid.value;
     targetIds.push(id);
@@ -39,16 +39,33 @@ export async function getTargets(
     };
   });
 
-  const counts = await getTargetAnnotationCount(target, targetIds);
+  const [counts, countsReviewed] = await Promise.all([
+    getTargetAnnotationCount(target, targetIds),
+    getTargetAnnotationCount(target, targetIds, true),
+  ]);
   return targets.map((t) => {
     return {
       ...t,
       annotationCount: counts[t.id],
+      annotationReviewedCount: countsReviewed[t.id],
     };
   });
 }
 
-async function getTargetAnnotationCount(target: Target, targetIds: string[]) {
+async function getTargetAnnotationCount(
+  target: Target,
+  targetIds: string[],
+  reviewed = false,
+) {
+  let reviewedFilter = '';
+  if (reviewed) {
+    reviewedFilter = `
+      FILTER EXISTS {
+        ?review a ext:ReviewAnnotation . 
+        ?review oa:hasTarget ?annotation .
+      } 
+    `;
+  }
   const results = await query(`
     ${target.prefixes}
     PREFIX oa: <http://www.w3.org/ns/oa#>
@@ -56,16 +73,19 @@ async function getTargetAnnotationCount(target: Target, targetIds: string[]) {
     PREFIX mu: <http://mu.semte.ch/vocabularies/core/>
     PREFIX prov: <http://www.w3.org/ns/prov#>
     PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
-    PREFIX bif:     <http://www.openlinksw.com/schemas/bif#>
+    PREFIX bif: <http://www.openlinksw.com/schemas/bif#>
+    PREFIX ext: <http://mu.semte.ch/vocabularies/ext/>
 
     SELECT ?targetId (COUNT(DISTINCT ?annotation) as ?count) 
     
     WHERE {
       ${buildAnnotationWhere(target, targetIds)}
+
+      ${reviewedFilter}
     } GROUP BY ?targetId
   `);
 
-  const targetCountMap = {};
+  const targetCountMap = {} as { [key: string]: number };
 
   results.results.bindings.forEach((binding) => {
     targetCountMap[binding.targetId.value] = parseInt(binding.count.value);
