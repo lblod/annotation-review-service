@@ -61,7 +61,7 @@ export default {
               ?search bif:contains """'$search'"""
             }
           `,
-          variable: 'impactId',
+          variable: 'search',
           type: 'search',
         },
       },
@@ -168,7 +168,7 @@ export default {
               ?title bif:contains """'$search'"""
             }
           `,
-          variable: 'impactId',
+          variable: 'search',
           type: 'search',
         },
         year: {

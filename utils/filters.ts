@@ -17,7 +17,8 @@ export function buildFilterString(target: Target, filters: Filters) {
 
     if (filterConfig.type === 'search') {
       const safeValue = filters[key].split("'").join('').split('"').join('');
-      filterString = filterString.split('$search').join(safeValue) + '\n}';
+      filterString =
+        filterString.split(`$${filterConfig.variable}`).join(safeValue) + '\n}';
       return;
     }
 
