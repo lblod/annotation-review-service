@@ -9,10 +9,18 @@ export function buildFilterString(target: Target, filters: Filters) {
     if (!filterConfig) {
       return;
     }
+
     filterString += `
       FILTER EXISTS {
         ${filterConfig.query}
     `;
+
+    if (filterConfig.type === 'search') {
+      const safeValue = filters[key].split("'").join('').split('"').join('');
+      filterString = filterString.split('$search').join(safeValue) + '\n}';
+      return;
+    }
+
     const filterValues = filters[key]
       .split(',')
       .map((filterValue) => {
