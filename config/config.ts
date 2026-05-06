@@ -97,18 +97,8 @@ export default {
 
       // these annotations are linking directly to the expression
       annotationPath: `
-        {  
-          ?annotation oa:hasTarget ?target .
-          ?target a eli:Expression . 
-        }
-        UNION 
-        {
-          ?annotation oa:hasTarget / ^eli:is_realized_by ?target .
-          FILTER NOT EXISTS {
-            ?annotation oa:hasTarget ?expression .
-            ?expression a eli:Expression.
-          }
-        }
+        ?annotation oa:hasTarget ?target .
+        ?target a eli:Expression . 
       `,
       filters: {
         conceptScheme: {
@@ -208,6 +198,7 @@ export default {
       // note have to put filter inside the bind's if because otherwise virtuoso doesn't want to include others as results anymore
       textPath: `
         ?object <http://www.w3.org/2004/02/skos/core#prefLabel> ?prefLabel .
+        FILTER(LANG(?prefLabel) = "en")
         OPTIONAL {
           ?annotation oa:hasBody ?impact .
         }
