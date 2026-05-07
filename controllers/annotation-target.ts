@@ -105,8 +105,12 @@ export function getTargetSelector(
       ${target.titlePath}
 
       ?annotation oa:hasTarget ?targetResource .
-      ?targetResource oa:source ?target .
+      ?targetResource oa:hasSource ?target .
 
       ${filterString}
+
+      ?action prov:generated ?annotation .
+      ?action prov:wasAssociatedWith ?agent .
+      ${target.annotationFilter} 
   `;
 }
