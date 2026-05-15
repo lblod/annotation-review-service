@@ -5,7 +5,7 @@ export type Target = {
     [filterName: string]: {
       query: string;
       variable: string;
-      type: 'uri' | 'string';
+      type: 'uri' | 'string' | 'search';
     };
   };
   label: string;

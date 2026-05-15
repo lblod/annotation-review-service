@@ -48,6 +48,22 @@ export default {
           variable: 'municipality',
           type: 'uri',
         },
+        title: {
+          query: `
+            {
+              ?target <http://data.europa.eu/eli/ontology#title> ?search.
+                  ?search bif:contains """'$search'"""
+            } UNION {
+              ?annotationT oa:hasTarget / oa:hasSource ?target.
+              ?annotationT oa:hasBody ?bodyT.
+              ?bodyT rdf:predicate eli:title .
+              ?bodyT rdf:object ?search.
+              ?search bif:contains """'$search'"""
+            }
+          `,
+          variable: 'search',
+          type: 'search',
+        },
       },
       titlePath: `
         OPTIONAL {
@@ -138,6 +154,22 @@ export default {
           `,
           variable: 'impactId',
           type: 'string',
+        },
+        title: {
+          query: `
+            {
+              ?target <http://data.europa.eu/eli/ontology#title> ?title.
+                  ?title bif:contains """'$search'"""
+            } UNION {
+              ?annotationT oa:hasTarget / oa:hasSource ?target.
+              ?annotationT oa:hasBody ?bodyT.
+              ?bodyT rdf:predicate eli:title .
+              ?bodyT rdf:object ?title.
+              ?title bif:contains """'$search'"""
+            }
+          `,
+          variable: 'search',
+          type: 'search',
         },
         year: {
           query: `

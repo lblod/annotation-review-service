@@ -9,10 +9,20 @@ export function buildFilterString(target: Target, filters: Filters) {
     if (!filterConfig) {
       return;
     }
+
     filterString += `
       FILTER EXISTS {
         ${filterConfig.query}
     `;
+
+    if (filterConfig.type === 'search') {
+      // eslint-disable-next-line
+      const safeValue = filters[key].split("'").join('').split('"').join('');
+      filterString =
+        filterString.split(`$${filterConfig.variable}`).join(safeValue) + '\n}';
+      return;
+    }
+
     const filterValues = filters[key]
       .split(',')
       .map((filterValue) => {

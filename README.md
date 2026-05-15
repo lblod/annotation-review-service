@@ -134,7 +134,21 @@ The targets hold the available types of target as a json object, with the keys b
 }
 ```
 
-The only reserved filter name is `ignoreAlreadyReviewed` which, if set to true filters out the annotations that were already reviewed in the current session.
+The only reserved filter name is `ignoreAlreadyReviewed` which, if set to true filters out the annotations that were already reviewed in the current session. Filters can be of type `"uri"` or `"string"` or `"search"`. A `FILTER EXISTS` clause is added to filter the results of the targets or annotations query with the `"query"` snippet as a constraint. In the case of `"uri"` or `"string"` the variable with name `"variable"` receives a `VALUES` statement with all the possible values passed in to the filter (comma separated). In the case of a `"search"`, a replace is done of `$variable`. An example of a `search` filter is:
+
+```js
+{
+  title: {
+    query: `?target <http://data.europa.eu/eli/ontology#title> ?title.
+            ?title bif:contains """'$search'"""
+            `,
+    variable: "search",
+    type: "search"
+  }
+}
+```
+
+to protect against sparql insertion, " and ' characters are removed from the search value.
 
 ### valueTypes
 
@@ -162,9 +176,9 @@ The valueTypes hold configuration per type of value for an annotation. This allo
 The default path for all types to find the textual representation of a value. e.g.
 
 ```json
- {
+{
   "defaultTextPath": "?object <http://www.w3.org/2000/01/rdf-schema#label> ?objectText ."
- }
+}
 ```
 
 ### defaultLinkPath
@@ -175,4 +189,4 @@ The default path for all types to find the URI of the value, e.g. in case of a e
 {
   "defaultLinkPath": "?object <http://www.w3.org/2004/02/skos/core#exactMatch> ?objectLink ."
 }
-````
+```
