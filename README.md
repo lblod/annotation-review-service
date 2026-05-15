@@ -134,7 +134,7 @@ The targets hold the available types of target as a json object, with the keys b
 }
 ```
 
-The only reserved filter name is `ignoreAlreadyReviewed` which, if set to true filters out the annotations that were already reviewed in the current session. Filters can be of type `"uri"` or `"string"` or `"search"`. A `FILTER EXISTS` clause is added to filter the results of the targets or annotations query with the `"query"` snippet as a constraint. In the case of `"uri"` or `"search"` the variable with name `"variable"` receives a `VALUES` statement with all the possible values passed in to the filter (comma separated). In the case of a `"search"`, a replace is done of `$variable`. An example of a `search` filter is:
+The only reserved filter name is `ignoreAlreadyReviewed` which, if set to true filters out the annotations that were already reviewed in the current session. Filters can be of type `"uri"` or `"string"` or `"search"`. A `FILTER EXISTS` clause is added to filter the results of the targets or annotations query with the `"query"` snippet as a constraint. In the case of `"uri"` or `"string"` the variable with name `"variable"` receives a `VALUES` statement with all the possible values passed in to the filter (comma separated). In the case of a `"search"`, a replace is done of `$variable`. An example of a `search` filter is:
 
 ```js
 {
