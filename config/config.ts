@@ -25,9 +25,9 @@ export default {
       // can use to filter annotations for a given target, need to fix the set of agents once we have final uris for them
       annotationFilter: `
         VALUES ?agent {          
-          <http://data.lblod.info/id/ai-components/entity-extraction>
-          <http://data.lblod.info/id/ai-components/segmentation>
-          <http://data.lblod.info/id/ai-components/linking>
+          <http://data.gift/id/components/entity-extraction/v1.0.0>
+          <http://data.gift/id/components/segmentation/v1.0.0>
+          <http://lblod.data.gift/id/components/named-entity-linking/v1.0.0>
         }
         FILTER(?type NOT IN (<http://www.w3.org/ns/locn#Address>, <https://data.vlaanderen.be/ns/adres#Straatnaam>, <http://www.wikidata.org/entity/Q2785216>, <http://www.wikidata.org/entity/Q123705> ))
       `,
@@ -91,7 +91,7 @@ export default {
         }
 
         VALUES ?agent {
-          <http://data.lblod.info/id/ai-components/model-annotation>
+          <http://lblod.data.gift/id/components/codelist-annotation/v1.0.0>
         }
       `,
 
