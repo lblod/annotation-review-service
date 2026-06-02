@@ -81,8 +81,9 @@ export async function getAllAnnotationsForTarget(
     getTargetData(target),
     getAnnotationsData(sessionId, target, page, pageSize, undefined, filters),
   ]);
-  const [textByObject, annotationCounts] = await Promise.all([
+  const [textByObject, impacts, annotationCounts] = await Promise.all([
     getObjectTexts(annotations),
+    getImpact(annotations),
     getAnnotationCounts(
       sessionId,
       annotations.map((annotation) => annotation.id),
@@ -93,6 +94,7 @@ export async function getAllAnnotationsForTarget(
     target: targetData,
     annotations: mergeExtraAnnotationInfo(annotations, {
       textByObject,
+      impacts,
       annotationCounts,
     }),
   };
@@ -135,6 +137,9 @@ function mergeExtraAnnotationInfo(
     textByObject = {} as {
       [annotationUri: string]: { [annotationValue: string]: string };
     },
+    impacts = {} as {
+      [annotationUri: string]: string;
+    },
     linkByObject = {} as {
       [annotationUri: string]: string;
     },
@@ -143,6 +148,7 @@ function mergeExtraAnnotationInfo(
 ) {
   return annotations.map((annotation) => {
     const counts = annotationCounts[annotation.id] as unknown as number;
+    annotation.impact = impacts[annotation.uri] as unknown as string;
 
     return {
       ...annotation,
@@ -315,6 +321,26 @@ async function getObjectLinks(annotations: Annotation[]) {
   });
 
   return linkByObject;
+}
+
+async function getImpact(annotations: Annotation[]) {
+  const result = await query(`
+    SELECT ?annotation ?impact
+    WHERE {
+      VALUES ?annotation {
+        ${annotations.map((a) => sparqlEscapeUri(a.uri)).join('\n')}
+      }
+      ?annotation oa:hasBody ?impact .
+      ?impact skos:inScheme <http://mu.semte.ch/vocabularies/ext/impact> .
+    }
+  `);
+
+  const impactByAnnotation: { [annotation: string]: string } = {};
+  result.results.bindings.forEach((binding) => {
+    impactByAnnotation[binding.annotation.value] = binding.impact.value;
+  });
+
+  return impactByAnnotation;
 }
 
 export function buildAnnotationWhere(

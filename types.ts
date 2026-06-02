@@ -19,6 +19,7 @@ export type Annotation = {
   id: string;
   link: string;
   type: string;
+  impact: string;
   value: string;
   agent: string;
   agentName: string;
