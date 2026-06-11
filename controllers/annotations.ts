@@ -1,4 +1,10 @@
-import { Annotation, AnnotationCounts, Filters, Target } from '../types';
+import {
+  Annotation,
+  AnnotationCounts,
+  AnnotationWithComments,
+  Filters,
+  Target,
+} from '../types';
 import { query, sparqlEscapeString, sparqlEscapeUri } from 'mu';
 import config from '../config/config';
 import { getAnnotationCounts } from './review';
@@ -98,6 +104,39 @@ export async function getAllAnnotationsForTarget(
       annotationCounts,
     }),
   };
+}
+
+export async function enrichAnnotationsWithRdfsComments(
+  annotations: Annotation[],
+) {
+  const typesAndLinks = new Set<string>();
+  annotations.forEach((a) => {
+    typesAndLinks.add(a.type);
+    typesAndLinks.add(a.link);
+  });
+
+  const safeUriValues = [...typesAndLinks].map(sparqlEscapeUri).join('\n');
+  const results = await query(`
+  PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+  SELECT ?uri ?comment WHERE {
+    VALUES ?uri {
+      ${safeUriValues}
+    }
+    ?uri rdfs:comment ?comment .
+  }`);
+
+  const uriCommentMapping = {} as { [key: string]: string };
+  results.results.bindings.forEach((b) => {
+    uriCommentMapping[b.uri.value] = b.comment.value;
+  });
+
+  return annotations.map((a) => {
+    return {
+      ...a,
+      linkComment: uriCommentMapping[a.link],
+      typeComment: uriCommentMapping[a.type],
+    } as AnnotationWithComments;
+  });
 }
 
 export async function getAnnotationsForTarget(

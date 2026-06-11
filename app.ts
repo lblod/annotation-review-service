@@ -10,6 +10,7 @@ import {
   getAnnotationsForTarget,
   getAllAnnotationCountForTarget,
   getAllAnnotationsForTarget,
+  enrichAnnotationsWithRdfsComments,
 } from './controllers/annotations';
 import { reviewAnnotation } from './controllers/review';
 import { Filters } from './types';
@@ -71,7 +72,15 @@ app.get('/annotations/:type/:id', async (req, res) => {
     getAnnotationsForTarget(sessionId, target, id, filters, page, pageSize),
   ]);
 
-  res.send({ ...annotations, annotationCount });
+  const enrichedAnnotations = await enrichAnnotationsWithRdfsComments(
+    annotations.annotations,
+  );
+
+  res.send({
+    target: annotations.target,
+    annotations: enrichedAnnotations,
+    annotationCount,
+  });
 });
 
 app.get('/annotations/:type', async (req, res) => {
@@ -92,8 +101,15 @@ app.get('/annotations/:type', async (req, res) => {
     getAllAnnotationCountForTarget(sessionId, target, filters),
     getAllAnnotationsForTarget(sessionId, target, filters, page, pageSize),
   ]);
+  const enrichedAnnotations = await enrichAnnotationsWithRdfsComments(
+    annotations.annotations,
+  );
 
-  res.send({ ...annotations, annotationCount });
+  res.send({
+    target: annotations.target,
+    annotations: enrichedAnnotations,
+    annotationCount,
+  });
 });
 
 app.post('/review/:annotationId/:result', async (req, res) => {
