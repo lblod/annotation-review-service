@@ -115,7 +115,10 @@ export async function enrichAnnotationsWithRdfsComments(
     typesAndLinks.add(a.link);
   });
 
-  const safeUriValues = [...typesAndLinks].map(sparqlEscapeUri).join('\n');
+  const safeUriValues = [...typesAndLinks]
+    .filter((a) => !!a)
+    .map(sparqlEscapeUri)
+    .join('\n');
   const results = await query(`
   PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
   SELECT ?uri ?comment WHERE {
