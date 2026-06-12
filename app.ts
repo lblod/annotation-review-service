@@ -12,7 +12,7 @@ import {
   getAllAnnotationsForTarget,
   enrichAnnotationsWithRdfsComments,
 } from './controllers/annotations';
-import { reviewAnnotation } from './controllers/review';
+import { deleteAnnotationReview, reviewAnnotation } from './controllers/review';
 import { Filters } from './types';
 
 // we want filter[foo]=bar&filter[id]=1
@@ -110,6 +110,13 @@ app.get('/annotations/:type', async (req, res) => {
     annotations: enrichedAnnotations,
     annotationCount,
   });
+});
+
+app.delete('/review/:annotationId', async (req, res) => {
+  const annotationId = req.params.annotationId;
+  const sessionId = req.get('mu-session-id') as string;
+  const currentCounts = await deleteAnnotationReview(annotationId, sessionId);
+  res.send(currentCounts);
 });
 
 app.post('/review/:annotationId/:result', async (req, res) => {

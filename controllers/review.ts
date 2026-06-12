@@ -12,31 +12,22 @@ export async function reviewAnnotation(
   return newCounts[annotationId];
 }
 
+export async function deleteAnnotationReview(
+  annotationId: string,
+  sessionId: string,
+) {
+  await removeReviewAnnotation(annotationId, sessionId);
+  const newCounts = await getAnnotationCounts(sessionId, [annotationId]);
+  return newCounts[annotationId] || {};
+}
+
 async function addReviewAnnotation(
   annotationId: string,
   sessionId: string,
   result: 'approve' | 'reject',
 ) {
   // separate delete and insert query because triplestore did not handle optional efficiently
-  await update(`
-    PREFIX mu: <http://mu.semte.ch/vocabularies/core/>
-    PREFIX ext: <http://mu.semte.ch/vocabularies/ext/>
-    PREFIX oa: <http://www.w3.org/ns/oa#>
-    PREFIX dct: <http://purl.org/dc/terms/>
-
-    DELETE {
-      ?existingReview ?p ?o.
-    }
-    WHERE {
-      ?annotation a oa:Annotation .
-      ?annotation mu:uuid ${sparqlEscapeString(annotationId)} .
-      ?existingReview a oa:Annotation .
-      ?existingReview a ext:ReviewAnnotation .
-      ?existingReview oa:hasTarget ?annotation .
-      ?existingReview oa:motivatedBy oa:assessing .
-      ?existingReview dct:creator ${sparqlEscapeUri(sessionId)} .
-      ?existingReview ?p ?o.
-    }`);
+  await removeReviewAnnotation(annotationId, sessionId);
 
   const newId = uuid();
   const newUri = `http://data.lblod.info/id/annotations/${newId}`;
@@ -69,6 +60,28 @@ async function addReviewAnnotation(
       BIND (NOW() AS ?now)
     }
   `);
+}
+
+async function removeReviewAnnotation(annotationId: string, sessionId: string) {
+  await update(`
+    PREFIX mu: <http://mu.semte.ch/vocabularies/core/>
+    PREFIX ext: <http://mu.semte.ch/vocabularies/ext/>
+    PREFIX oa: <http://www.w3.org/ns/oa#>
+    PREFIX dct: <http://purl.org/dc/terms/>
+
+    DELETE {
+      ?existingReview ?p ?o.
+    }
+    WHERE {
+      ?annotation a oa:Annotation .
+      ?annotation mu:uuid ${sparqlEscapeString(annotationId)} .
+      ?existingReview a oa:Annotation .
+      ?existingReview a ext:ReviewAnnotation .
+      ?existingReview oa:hasTarget ?annotation .
+      ?existingReview oa:motivatedBy oa:assessing .
+      ?existingReview dct:creator ${sparqlEscapeUri(sessionId)} .
+      ?existingReview ?p ?o.
+    }`);
 }
 
 export async function getAnnotationCounts(
