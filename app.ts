@@ -12,7 +12,10 @@ import {
   getAllAnnotationsForTarget,
   enrichAnnotationsWithRdfsComments,
 } from './controllers/annotations';
-import { deleteAnnotationReview, reviewAnnotation } from './controllers/review';
+import {
+  deleteAnnotationReview,
+  reviewAnnotationTarget,
+} from './controllers/review';
 import { Correction, Filters } from './types';
 
 // we want filter[foo]=bar&filter[id]=1
@@ -113,16 +116,19 @@ app.get('/annotations/:type', async (req, res) => {
   });
 });
 
-app.delete('/review/:annotationId', async (req, res) => {
-  const annotationId = req.params.annotationId;
+app.delete('/review/:annotationTargetId', async (req, res) => {
+  const annotationTargetId = req.params.annotationTargetId;
   const sessionId = req.get('mu-session-id') as string;
-  const currentCounts = await deleteAnnotationReview(annotationId, sessionId);
+  const currentCounts = await deleteAnnotationReview(
+    annotationTargetId,
+    sessionId,
+  );
   res.send({ counts: currentCounts });
 });
 
-app.post('/review/:annotationId/:result', async (req, res) => {
+app.post('/review/:annotationTargetId/:result', async (req, res) => {
   const result = req.params.result as 'approve' | 'reject';
-  const annotationId = req.params.annotationId;
+  const annotationTargetId = req.params.annotationTargetId;
   const sessionId = req.get('mu-session-id') as string;
   const corrections = req.body?.corrections as Correction[] | undefined;
 
@@ -130,7 +136,6 @@ app.post('/review/:annotationId/:result', async (req, res) => {
     res.status(400).send({ error: `Unknown review result ${result}` });
     return;
   }
-
   // split up to help type checking along
   if (result === 'approve') {
     if (corrections) {
@@ -139,8 +144,8 @@ app.post('/review/:annotationId/:result', async (req, res) => {
       });
       return;
     } else {
-      const { counts } = await reviewAnnotation({
-        annotationId,
+      const { counts } = await reviewAnnotationTarget({
+        annotationTargetId,
         sessionId,
         result,
         corrections,
@@ -148,8 +153,8 @@ app.post('/review/:annotationId/:result', async (req, res) => {
       res.send({ counts });
     }
   } else {
-    const { counts, correctionIds } = await reviewAnnotation({
-      annotationId,
+    const { counts, correctionIds } = await reviewAnnotationTarget({
+      annotationTargetId,
       sessionId,
       result,
       corrections,

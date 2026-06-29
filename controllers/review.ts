@@ -11,57 +11,66 @@ import { AnnotationCounts, Correction, Statement } from '../types';
 
 type ReviewInput =
   | {
-      annotationId: string;
+      annotationTargetId: string;
       sessionId: string;
       result: 'approve';
       corrections: undefined;
     }
   | {
-      annotationId: string;
+      annotationTargetId: string;
       sessionId: string;
       result: 'reject';
       corrections?: Correction[];
     };
 
-export async function reviewAnnotation({
-  annotationId,
+export async function reviewAnnotationTarget({
+  annotationTargetId,
   sessionId,
   result,
   corrections,
 }: ReviewInput) {
-  const reviewUri = await addReviewAnnotation(annotationId, sessionId, result);
+  const reviewUri = await addReviewAnnotation(
+    annotationTargetId,
+    sessionId,
+    result,
+  );
 
   let correctionIds = [] as string[];
   if (corrections) {
     correctionIds = await Promise.all(
       corrections?.map((correction) => {
-        return addCorrection(annotationId, sessionId, reviewUri, correction);
+        return addCorrection(
+          annotationTargetId,
+          sessionId,
+          reviewUri,
+          correction,
+        );
       }),
     );
   }
-  const newCounts = await getAnnotationCounts(sessionId, [annotationId]);
+  const newCounts = await getAnnotationCounts(sessionId, [annotationTargetId]);
   return {
-    counts: newCounts[annotationId],
+    counts: newCounts[annotationTargetId],
     correctionIds,
   };
 }
 
 async function addCorrection(
-  annotationId: string,
+  annotationTargetId: string,
   sessionId: string,
   reviewUri: string,
   correction: Correction,
 ) {
   if (correction.resourceUri) {
     return addCorrectionByDirectResource(
-      annotationId,
+      annotationTargetId,
       sessionId,
       reviewUri,
       correction.resourceUri,
     );
   } else {
     return addCorrectionByStatement(
-      annotationId,
+      annotationTargetId,
       sessionId,
       reviewUri,
       correction.statement!,
@@ -70,7 +79,7 @@ async function addCorrection(
 }
 
 async function addCorrectionByDirectResource(
-  annotationId: string,
+  annotationTargetId: string,
   sessionId: string,
   reviewUri: string,
   resourceUri: string,
@@ -105,7 +114,7 @@ async function addCorrectionByDirectResource(
     }
     WHERE {
       ?annotation a oa:Annotation .
-      ?annotation mu:uuid ${sparqlEscapeString(annotationId)} .
+      ?annotation mu:uuid ${sparqlEscapeString(annotationTargetId)} .
       ?annotation oa:hasTarget ?target .
 
       VALUES ( ?correctionId ?correction ?activity ?activityId ) {
@@ -118,7 +127,7 @@ async function addCorrectionByDirectResource(
 }
 
 async function addCorrectionByStatement(
-  annotationId: string,
+  annotationTargetId: string,
   sessionId: string,
   reviewUri: string,
   statement: Statement,
@@ -161,7 +170,7 @@ async function addCorrectionByStatement(
     }
     WHERE {
       ?annotation a oa:Annotation .
-      ?annotation mu:uuid ${sparqlEscapeString(annotationId)} .
+      ?annotation mu:uuid ${sparqlEscapeString(annotationTargetId)} .
       ?annotation oa:hasTarget ?target .
 
       VALUES ( ?correctionId ?correction ?activity ?activityId ) {
@@ -183,12 +192,12 @@ export async function deleteAnnotationReview(
 }
 
 async function addReviewAnnotation(
-  annotationId: string,
+  annotationTargetId: string,
   sessionId: string,
   result: 'approve' | 'reject',
 ) {
   // separate delete and insert query because triplestore did not handle optional efficiently
-  await removeReviewAnnotation(annotationId, sessionId);
+  await removeReviewAnnotation(annotationTargetId, sessionId);
 
   const newId = uuid();
   const newUri = `http://data.lblod.info/id/annotations/${newId}`;
@@ -204,7 +213,7 @@ async function addReviewAnnotation(
     INSERT {
       ?reviewAnnotation a oa:Annotation .
       ?reviewAnnotation a ext:ReviewAnnotation .
-      ?reviewAnnotation oa:hasTarget ?annotation .
+      ?reviewAnnotation oa:hasTarget ?annotationTarget .
       ?reviewAnnotation oa:hasBody ${safeBody} .
       ?reviewAnnotation oa:motivatedBy oa:assessing .
       ?reviewAnnotation mu:uuid ?reviewAnnotationId .
@@ -212,8 +221,8 @@ async function addReviewAnnotation(
       ?reviewAnnotation dct:creator ${sparqlEscapeUri(sessionId)} .
     }
     WHERE {
-      ?annotation a oa:Annotation .
-      ?annotation mu:uuid ${sparqlEscapeString(annotationId)} .
+      ?annotationTarget a ext:AnnotationTarget .
+      ?annotationTarget mu:uuid ${sparqlEscapeString(annotationTargetId)} .
 
       VALUES ( ?reviewAnnotationId ?reviewAnnotation ) {
         ( ${sparqlEscapeString(newId)} ${sparqlEscapeUri(newUri)})
@@ -224,7 +233,10 @@ async function addReviewAnnotation(
   return newUri;
 }
 
-async function removeReviewAnnotation(annotationId: string, sessionId: string) {
+async function removeReviewAnnotation(
+  annotationTargetId: string,
+  sessionId: string,
+) {
   await update(`
     PREFIX mu: <http://mu.semte.ch/vocabularies/core/>
     PREFIX ext: <http://mu.semte.ch/vocabularies/ext/>
@@ -238,11 +250,11 @@ async function removeReviewAnnotation(annotationId: string, sessionId: string) {
       ?statement ?sp ?so .
     }
     WHERE {
-      ?annotation a oa:Annotation .
-      ?annotation mu:uuid ${sparqlEscapeString(annotationId)} .
+      ?annotationTarget a ext:AnnotationTarget .
+      ?annotationTarget mu:uuid ${sparqlEscapeString(annotationTargetId)} .
       ?existingReview a oa:Annotation .
       ?existingReview a ext:ReviewAnnotation .
-      ?existingReview oa:hasTarget ?annotation .
+      ?existingReview oa:hasTarget ?annotationTarget .
       ?existingReview oa:motivatedBy oa:assessing .
       ?existingReview dct:creator ${sparqlEscapeUri(sessionId)} .
       ?existingReview ?p ?o.
@@ -264,7 +276,7 @@ async function removeReviewAnnotation(annotationId: string, sessionId: string) {
 
 export async function getAnnotationCounts(
   sessionId: string,
-  annotationIds: string[],
+  annotationTargetIds: string[],
 ) {
   const result = await query(`
     PREFIX mu: <http://mu.semte.ch/vocabularies/core/>
@@ -272,28 +284,29 @@ export async function getAnnotationCounts(
     PREFIX oa: <http://www.w3.org/ns/oa#>
     PREFIX dct: <http://purl.org/dc/terms/>
 
-    SELECT ?annotationId ?ownResult ?reviewResult (COUNT(DISTINCT(?reviewAnnotation)) AS ?count)
+    SELECT ?annotationTargetId ?ownResult ?reviewResult (COUNT(DISTINCT(?reviewAnnotation)) AS ?count)
     WHERE {
-      VALUES ?annotationId {
-        ${annotationIds.map(sparqlEscapeString).join(' ')}
+      VALUES ?annotationTargetId {
+        ${annotationTargetIds.map(sparqlEscapeString).join(' ')}
       }
+      ?annotationTarget a ext:AnnotationTarget .
+      ?annotationTarget mu:uuid ?annotationTargetId .
       ?reviewAnnotation a oa:Annotation .
       ?reviewAnnotation a ext:ReviewAnnotation .
-      ?reviewAnnotation oa:hasTarget ?annotation .
+      ?reviewAnnotation oa:hasTarget ?annotationTarget .
       ?reviewAnnotation oa:hasBody ?reviewResult .
       ?reviewAnnotation oa:motivatedBy oa:assessing .
-      ?annotation mu:uuid ?annotationId .
-      
+
       OPTIONAL {
         ?ownAnnotation a oa:Annotation .
         ?ownAnnotation a ext:ReviewAnnotation .
-        ?ownAnnotation oa:hasTarget ?annotation .
+        ?ownAnnotation oa:hasTarget ?annotationTarget .
         ?ownAnnotation oa:hasBody ?ownResult .
         ?ownAnnotation oa:motivatedBy oa:assessing .      
         ?ownAnnotation dct:creator ${sparqlEscapeUri(sessionId)}
       }
     }
-    GROUP BY ?annotationId ?ownResult ?reviewResult
+    GROUP BY ?annotationTargetId ?ownResult ?reviewResult
   `);
 
   const counts: AnnotationCounts = {};
@@ -302,14 +315,14 @@ export async function getAnnotationCounts(
       config.reviewBodyPrefix,
       '',
     );
-    const annotationId = binding.annotationId.value;
-    counts[annotationId] = counts[annotationId] || {};
-    counts[annotationId][result] = parseInt(binding.count.value);
+    const annotationTargetId = binding.annotationTargetId.value;
+    counts[annotationTargetId] = counts[annotationTargetId] || {};
+    counts[annotationTargetId][result] = parseInt(binding.count.value);
     const ownReview = binding.ownResult?.value.replace(
       config.reviewBodyPrefix,
       '',
     );
-    counts[annotationId].ownReview = ownReview;
+    counts[annotationTargetId].ownReview = ownReview;
   });
   return counts;
 }
