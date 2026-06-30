@@ -302,7 +302,7 @@ export async function getAnnotationCounts(
         ?ownAnnotation a ext:ReviewAnnotation .
         ?ownAnnotation oa:hasTarget ?annotationTarget .
         ?ownAnnotation oa:hasBody ?ownResult .
-        ?ownAnnotation oa:motivatedBy oa:assessing .      
+        ?ownAnnotation oa:motivatedBy oa:assessing .
         ?ownAnnotation dct:creator ${sparqlEscapeUri(sessionId)}
       }
     }
