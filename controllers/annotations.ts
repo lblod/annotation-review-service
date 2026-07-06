@@ -58,7 +58,7 @@ export async function getAnnotationCountForTarget(
   sessionId: string,
   target: Target,
   targetId: string,
-  filters = {},
+  filters = {} as Filters,
 ) {
   const result = await query(`
     ${target.prefixes}

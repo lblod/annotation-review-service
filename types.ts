@@ -6,6 +6,8 @@ export type Target = {
       query: string;
       variable: string;
       type: 'uri' | 'string' | 'search';
+    } & {
+      ignoreAlreadyReviewed?: boolean;
     };
   };
   label: string;
@@ -37,4 +39,31 @@ export type AnnotationCounts = {
     ownReview?: string;
     [result: string]: number | string | undefined;
   };
+};
+
+export type Correction =
+  | {
+      resourceUri: string;
+      statement?: never;
+    }
+  | {
+      resourceUri?: never;
+      statement: Statement;
+    };
+
+export type Statement = {
+  subject: string;
+  predicate: string;
+  object: string;
+  type?: string; // type as per sparqlEscape(value, type), defaults to "string"
+};
+
+export type Config = {
+  targets: { [key: string]: Target };
+  valueTypes: {
+    [typeUri: string]: { name: string; textPath?: string; linkPath?: string };
+  };
+  defaultTextPath: string;
+  defaultLinkPath: string;
+  reviewBodyPrefix: string;
 };
