@@ -21,7 +21,7 @@ app.set('query parser', (str: string) => qs.parse(str, { depth: 10 }));
 app.use(
   bodyParser.json({
     limit: '500mb',
-    // @ts-ignore
+    // @ts-expect-error ts wants more complex typing here but it really doesn't matter for our case
     type: function (req: Request) {
       return /^application\/json/.test(req.get('content-type') as string);
     },
@@ -135,7 +135,7 @@ app.post('/review/:annotationId/:result', async (req, res) => {
   if (result === 'approve') {
     if (correction) {
       res.status(400).send({
-        error: `Received an approval and a correction at the same time.`,
+        error: 'Received an approval and a correction at the same time.',
       });
       return;
     } else {
