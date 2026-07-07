@@ -78,6 +78,8 @@ async function addCorrectionByDirectResource(
 ) {
   const correctionId = uuid();
   const correctionUri = `http://data.lblod.info/id/annotations/${correctionId}`;
+  const activityId = uuid();
+  const activityUri = `http://data.lblod.info/id/activities/${activityId}`;
 
   await update(`
     PREFIX mu: <http://mu.semte.ch/vocabularies/core/>
@@ -96,6 +98,10 @@ async function addCorrectionByDirectResource(
       ?correction mu:uuid ?correctionId .
       ?correction dct:created ?now .
       ?correction dct:creator ${sparqlEscapeUri(sessionId)} .
+      ?activity a prov:Activity .
+      ?activity mu:uuid ?activityId .
+      ?activity prov:generated ?correction .
+      ?activity prov:wasAssociatedWith ${sparqlEscapeUri(sessionId)} .
       ${sparqlEscapeUri(reviewUri)} prov:influenced ?correction .
     }
     WHERE {
@@ -103,8 +109,8 @@ async function addCorrectionByDirectResource(
       ?annotation mu:uuid ${sparqlEscapeString(annotationId)} .
       ?annotation oa:hasTarget ?target .
 
-      VALUES ( ?correctionId ?correction ) {
-        ( ${sparqlEscapeString(correctionId)} ${sparqlEscapeUri(correctionUri)})
+      VALUES ( ?correctionId ?correction ?activity ?activityId ) {
+        ( ${sparqlEscapeString(correctionId)} ${sparqlEscapeUri(correctionUri)} ${sparqlEscapeUri(activityUri)} ${sparqlEscapeString(activityId)})
       }
       BIND (NOW() AS ?now)
     }
@@ -122,6 +128,8 @@ async function addCorrectionByStatement(
   const correctionUri = `http://data.lblod.info/id/annotations/${correctionId}`;
   const statementId = uuid();
   const statementUri = `http://data.lblod.info/id/statements/${statementId}`;
+  const activityId = uuid();
+  const activityUri = `http://data.lblod.info/id/activities/${activityId}`;
 
   await update(`
     PREFIX mu: <http://mu.semte.ch/vocabularies/core/>
@@ -146,6 +154,10 @@ async function addCorrectionByStatement(
       ?correction mu:uuid ?correctionId .
       ?correction dct:created ?now .
       ?correction dct:creator ${sparqlEscapeUri(sessionId)} .
+      ?activity a prov:Activity .
+      ?activity mu:uuid ?activityId .
+      ?activity prov:generated ?correction .
+      ?activity prov:wasAssociatedWith ${sparqlEscapeUri(sessionId)} .
       ${sparqlEscapeUri(reviewUri)} prov:influenced ?correction .
     }
     WHERE {
@@ -153,8 +165,8 @@ async function addCorrectionByStatement(
       ?annotation mu:uuid ${sparqlEscapeString(annotationId)} .
       ?annotation oa:hasTarget ?target .
 
-      VALUES ( ?correctionId ?correction ) {
-        ( ${sparqlEscapeString(correctionId)} ${sparqlEscapeUri(correctionUri)})
+      VALUES ( ?correctionId ?correction ?activity ?activityId ) {
+        ( ${sparqlEscapeString(correctionId)} ${sparqlEscapeUri(correctionUri)} ${sparqlEscapeUri(activityUri)} ${sparqlEscapeString(activityId)})
       }
       BIND (NOW() AS ?now)
     }
