@@ -124,7 +124,7 @@ app.post('/review/:annotationId/:result', async (req, res) => {
   const result = req.params.result as 'approve' | 'reject';
   const annotationId = req.params.annotationId;
   const sessionId = req.get('mu-session-id') as string;
-  const correction = req.body?.correction as Correction | undefined;
+  const corrections = req.body?.corrections as Correction[] | undefined;
 
   if (!['approve', 'reject'].includes(result)) {
     res.status(400).send({ error: `Unknown review result ${result}` });
@@ -133,7 +133,7 @@ app.post('/review/:annotationId/:result', async (req, res) => {
 
   // split up to help type checking along
   if (result === 'approve') {
-    if (correction) {
+    if (corrections) {
       res.status(400).send({
         error: 'Received an approval and a correction at the same time.',
       });
@@ -143,18 +143,18 @@ app.post('/review/:annotationId/:result', async (req, res) => {
         annotationId,
         sessionId,
         result,
-        correction,
+        corrections,
       });
       res.send({ counts });
     }
   } else {
-    const { counts, correctionId } = await reviewAnnotation({
+    const { counts, correctionIds } = await reviewAnnotation({
       annotationId,
       sessionId,
       result,
-      correction,
+      corrections,
     });
-    res.send({ counts, correctionId });
+    res.send({ counts, correctionIds });
   }
 });
 

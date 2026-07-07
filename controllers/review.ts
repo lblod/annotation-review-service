@@ -14,32 +14,35 @@ type ReviewInput =
       annotationId: string;
       sessionId: string;
       result: 'approve';
-      correction: undefined;
+      corrections: undefined;
     }
   | {
       annotationId: string;
       sessionId: string;
       result: 'reject';
-      correction?: Correction;
+      corrections?: Correction[];
     };
 
 export async function reviewAnnotation({
   annotationId,
   sessionId,
   result,
-  correction,
+  corrections,
 }: ReviewInput) {
   const reviewUri = await addReviewAnnotation(annotationId, sessionId, result);
-  const correctionId = await addCorrection(
-    annotationId,
-    sessionId,
-    reviewUri,
-    correction,
-  );
+
+  let correctionIds = [] as string[];
+  if (corrections) {
+    correctionIds = await Promise.all(
+      corrections?.map((correction) => {
+        return addCorrection(annotationId, sessionId, reviewUri, correction);
+      }),
+    );
+  }
   const newCounts = await getAnnotationCounts(sessionId, [annotationId]);
   return {
     counts: newCounts[annotationId],
-    correctionId,
+    correctionIds,
   };
 }
 
@@ -47,12 +50,8 @@ async function addCorrection(
   annotationId: string,
   sessionId: string,
   reviewUri: string,
-  correction?: Correction,
+  correction: Correction,
 ) {
-  if (!correction) {
-    return;
-  }
-
   if (correction.resourceUri) {
     return addCorrectionByDirectResource(
       annotationId,

@@ -92,13 +92,36 @@ Parameters:
 - annotationId: the id of the annotation to review
 - result: either `approve` or `reject` as a string
 
-returns the new counts for the annotation:
+Optionally, a body can be sent that contains corrections as an array. Every correction is either a pointer to a resourceUri as a body or a Statement with subject, predicate, object and a mu-js-template type value (e.g. `uri`, `string`, `date`, ...).
 
 ```json
 {
-  "reject": 1,
-  "approve": 2,
-  "ownReview": "approve"
+  "corrections": [
+    {
+      "resourceUri": "http://data.lblod.gift/id/concept/def977cfc4cd819c575874e0d82beada"
+    },
+    {
+      "statement": {
+        "subject": "http://data.lblod.gift/id/concept/def977cfc4cd819c575874e0d82beada",
+        "predicate": "http://www.w3.org/1999/02/22-rdf-syntax-ns#type",
+        "object": "http://www.w3.org/2004/02/skos/core#Concept",
+        "type": "uri"
+      }
+    }
+  ]
+}
+```
+
+returns the new counts for the annotation and the corrections created if any:
+
+```json
+{
+  "counts": {
+    "reject": 1,
+    "approve": 2,
+    "ownReview": "approve"
+  },
+  "correctionIds": ["foo", "bar"]
 }
 ```
 
