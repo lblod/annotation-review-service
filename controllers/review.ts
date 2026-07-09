@@ -9,6 +9,18 @@ import {
 import config from '../config/config';
 import { AnnotationCounts, Correction, Statement } from '../types';
 
+const rawAnnotationTargetTypes = process.env.ANNOTATION_TARGET_TYPES?.trim();
+const annotationTargetTypes = rawAnnotationTargetTypes
+  ? rawAnnotationTargetTypes
+      .split(',')
+      .map((t) => t.trim())
+      .filter(Boolean)
+  : ['http://www.w3.org/ns/oa#Annotation'];
+
+const annotationTargetTypesValues = `VALUES ?annotationTargetType { ${annotationTargetTypes
+  .map(sparqlEscapeUri)
+  .join(' ')} }`;
+
 type ReviewInput =
   | {
       annotationTargetId: string;
@@ -221,7 +233,8 @@ async function addReviewAnnotation(
       ?reviewAnnotation dct:creator ${sparqlEscapeUri(sessionId)} .
     }
     WHERE {
-      ?annotationTarget a ext:AnnotationTarget .
+      ${annotationTargetTypesValues}
+      ?annotationTarget a ?annotationTargetType .
       ?annotationTarget mu:uuid ${sparqlEscapeString(annotationTargetId)} .
 
       VALUES ( ?reviewAnnotationId ?reviewAnnotation ) {
@@ -250,7 +263,6 @@ async function removeReviewAnnotation(
       ?statement ?sp ?so .
     }
     WHERE {
-      ?annotationTarget a ext:AnnotationTarget .
       ?annotationTarget mu:uuid ${sparqlEscapeString(annotationTargetId)} .
       ?existingReview a oa:Annotation .
       ?existingReview a ext:ReviewAnnotation .
@@ -289,7 +301,6 @@ export async function getAnnotationCounts(
       VALUES ?annotationTargetId {
         ${annotationTargetIds.map(sparqlEscapeString).join(' ')}
       }
-      ?annotationTarget a ext:AnnotationTarget .
       ?annotationTarget mu:uuid ?annotationTargetId .
       ?reviewAnnotation a oa:Annotation .
       ?reviewAnnotation a ext:ReviewAnnotation .
