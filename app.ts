@@ -13,7 +13,7 @@ import {
   enrichAnnotationsWithRdfsComments,
 } from './controllers/annotations';
 import { deleteAnnotationReview, reviewAnnotation } from './controllers/review';
-import { Filters } from './types';
+import { Correction, Filters } from './types';
 
 // we want filter[foo]=bar&filter[id]=1
 app.set('query parser', (str: string) => qs.parse(str, { depth: 10 }));
@@ -21,6 +21,7 @@ app.set('query parser', (str: string) => qs.parse(str, { depth: 10 }));
 app.use(
   bodyParser.json({
     limit: '500mb',
+    // @ts-expect-error ts wants more complex typing here but it really doesn't matter for our case
     type: function (req: Request) {
       return /^application\/json/.test(req.get('content-type') as string);
     },
@@ -116,24 +117,45 @@ app.delete('/review/:annotationId', async (req, res) => {
   const annotationId = req.params.annotationId;
   const sessionId = req.get('mu-session-id') as string;
   const currentCounts = await deleteAnnotationReview(annotationId, sessionId);
-  res.send(currentCounts);
+  res.send({ counts: currentCounts });
 });
 
 app.post('/review/:annotationId/:result', async (req, res) => {
-  const result = req.params.result;
+  const result = req.params.result as 'approve' | 'reject';
   const annotationId = req.params.annotationId;
   const sessionId = req.get('mu-session-id') as string;
+  const corrections = req.body?.corrections as Correction[] | undefined;
 
   if (!['approve', 'reject'].includes(result)) {
     res.status(400).send({ error: `Unknown review result ${result}` });
     return;
   }
-  const currentCounts = await reviewAnnotation(
-    annotationId,
-    sessionId,
-    result as 'approve' | 'reject',
-  );
-  res.send(currentCounts);
+
+  // split up to help type checking along
+  if (result === 'approve') {
+    if (corrections) {
+      res.status(400).send({
+        error: 'Received an approval and a correction at the same time.',
+      });
+      return;
+    } else {
+      const { counts } = await reviewAnnotation({
+        annotationId,
+        sessionId,
+        result,
+        corrections,
+      });
+      res.send({ counts });
+    }
+  } else {
+    const { counts, correctionIds } = await reviewAnnotation({
+      annotationId,
+      sessionId,
+      result,
+      corrections,
+    });
+    res.send({ counts, correctionIds });
+  }
 });
 
 const errorHandler: ErrorRequestHandler = function (err, _req, res, _next) {

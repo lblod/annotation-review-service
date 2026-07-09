@@ -1,15 +1,176 @@
-import { query, update, sparqlEscapeString, sparqlEscapeUri, uuid } from 'mu';
+import {
+  query,
+  update,
+  sparqlEscapeString,
+  sparqlEscapeUri,
+  uuid,
+  sparqlEscape,
+} from 'mu';
 import config from '../config/config';
-import { AnnotationCounts } from '../types';
+import { AnnotationCounts, Correction, Statement } from '../types';
 
-export async function reviewAnnotation(
+type ReviewInput =
+  | {
+      annotationId: string;
+      sessionId: string;
+      result: 'approve';
+      corrections: undefined;
+    }
+  | {
+      annotationId: string;
+      sessionId: string;
+      result: 'reject';
+      corrections?: Correction[];
+    };
+
+export async function reviewAnnotation({
+  annotationId,
+  sessionId,
+  result,
+  corrections,
+}: ReviewInput) {
+  const reviewUri = await addReviewAnnotation(annotationId, sessionId, result);
+
+  let correctionIds = [] as string[];
+  if (corrections) {
+    correctionIds = await Promise.all(
+      corrections?.map((correction) => {
+        return addCorrection(annotationId, sessionId, reviewUri, correction);
+      }),
+    );
+  }
+  const newCounts = await getAnnotationCounts(sessionId, [annotationId]);
+  return {
+    counts: newCounts[annotationId],
+    correctionIds,
+  };
+}
+
+async function addCorrection(
   annotationId: string,
   sessionId: string,
-  result: 'approve' | 'reject',
+  reviewUri: string,
+  correction: Correction,
 ) {
-  await addReviewAnnotation(annotationId, sessionId, result);
-  const newCounts = await getAnnotationCounts(sessionId, [annotationId]);
-  return newCounts[annotationId];
+  if (correction.resourceUri) {
+    return addCorrectionByDirectResource(
+      annotationId,
+      sessionId,
+      reviewUri,
+      correction.resourceUri,
+    );
+  } else {
+    return addCorrectionByStatement(
+      annotationId,
+      sessionId,
+      reviewUri,
+      correction.statement!,
+    );
+  }
+}
+
+async function addCorrectionByDirectResource(
+  annotationId: string,
+  sessionId: string,
+  reviewUri: string,
+  resourceUri: string,
+) {
+  const correctionId = uuid();
+  const correctionUri = `http://data.lblod.info/id/annotations/${correctionId}`;
+  const activityId = uuid();
+  const activityUri = `http://data.lblod.info/id/activities/${activityId}`;
+
+  await update(`
+    PREFIX mu: <http://mu.semte.ch/vocabularies/core/>
+    PREFIX ext: <http://mu.semte.ch/vocabularies/ext/>
+    PREFIX oa: <http://www.w3.org/ns/oa#>
+    PREFIX dct: <http://purl.org/dc/terms/>
+    PREFIX prov: <http://www.w3.org/ns/prov#>
+
+    INSERT {
+      ?correction a oa:Annotation .
+      ?correction a ext:CorrectionAnnotation .
+      ?correction oa:hasTarget ?target .
+      ?correction dct:replaces ?annotation .
+      ?correction oa:hasBody ${sparqlEscapeUri(resourceUri)} .
+      ?correction oa:motivatedBy oa:assessing .
+      ?correction mu:uuid ?correctionId .
+      ?correction dct:created ?now .
+      ?correction dct:creator ${sparqlEscapeUri(sessionId)} .
+      ?activity a prov:Activity .
+      ?activity mu:uuid ?activityId .
+      ?activity prov:generated ?correction .
+      ?activity prov:wasAssociatedWith ${sparqlEscapeUri(sessionId)} .
+      ${sparqlEscapeUri(reviewUri)} prov:influenced ?correction .
+    }
+    WHERE {
+      ?annotation a oa:Annotation .
+      ?annotation mu:uuid ${sparqlEscapeString(annotationId)} .
+      ?annotation oa:hasTarget ?target .
+
+      VALUES ( ?correctionId ?correction ?activity ?activityId ) {
+        ( ${sparqlEscapeString(correctionId)} ${sparqlEscapeUri(correctionUri)} ${sparqlEscapeUri(activityUri)} ${sparqlEscapeString(activityId)})
+      }
+      BIND (NOW() AS ?now)
+    }
+  `);
+  return correctionId;
+}
+
+async function addCorrectionByStatement(
+  annotationId: string,
+  sessionId: string,
+  reviewUri: string,
+  statement: Statement,
+) {
+  const correctionId = uuid();
+  const correctionUri = `http://data.lblod.info/id/annotations/${correctionId}`;
+  const statementId = uuid();
+  const statementUri = `http://data.lblod.info/id/statements/${statementId}`;
+  const activityId = uuid();
+  const activityUri = `http://data.lblod.info/id/activities/${activityId}`;
+
+  await update(`
+    PREFIX mu: <http://mu.semte.ch/vocabularies/core/>
+    PREFIX ext: <http://mu.semte.ch/vocabularies/ext/>
+    PREFIX oa: <http://www.w3.org/ns/oa#>
+    PREFIX dct: <http://purl.org/dc/terms/>
+    PREFIX prov: <http://www.w3.org/ns/prov#>
+    PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+
+    INSERT {
+      ?correction a oa:Annotation .
+      ?correction a ext:CorrectionAnnotation .
+      ?correction oa:hasTarget ?target .
+      ?correction dct:replaces ?annotation .
+      ?correction oa:hasBody ${sparqlEscapeUri(statementUri)} .
+      ${sparqlEscapeUri(statementUri)} a rdf:Statement .
+      ${sparqlEscapeUri(statementUri)} mu:uuid ${sparqlEscapeString(statementId)} .      
+      ${sparqlEscapeUri(statementUri)} rdf:subject ${sparqlEscapeUri(statement.subject)} .
+      ${sparqlEscapeUri(statementUri)} rdf:predicate ${sparqlEscapeUri(statement.predicate)} .
+      ${sparqlEscapeUri(statementUri)} rdf:subject ${sparqlEscape(statement.object, statement.type || 'string')} .
+      ?correction oa:motivatedBy oa:assessing .
+      ?correction mu:uuid ?correctionId .
+      ?correction dct:created ?now .
+      ?correction dct:creator ${sparqlEscapeUri(sessionId)} .
+      ?activity a prov:Activity .
+      ?activity mu:uuid ?activityId .
+      ?activity prov:generated ?correction .
+      ?activity prov:wasAssociatedWith ${sparqlEscapeUri(sessionId)} .
+      ${sparqlEscapeUri(reviewUri)} prov:influenced ?correction .
+    }
+    WHERE {
+      ?annotation a oa:Annotation .
+      ?annotation mu:uuid ${sparqlEscapeString(annotationId)} .
+      ?annotation oa:hasTarget ?target .
+
+      VALUES ( ?correctionId ?correction ?activity ?activityId ) {
+        ( ${sparqlEscapeString(correctionId)} ${sparqlEscapeUri(correctionUri)} ${sparqlEscapeUri(activityUri)} ${sparqlEscapeString(activityId)})
+      }
+      BIND (NOW() AS ?now)
+    }
+  `);
+  return correctionId;
 }
 
 export async function deleteAnnotationReview(
@@ -60,6 +221,7 @@ async function addReviewAnnotation(
       BIND (NOW() AS ?now)
     }
   `);
+  return newUri;
 }
 
 async function removeReviewAnnotation(annotationId: string, sessionId: string) {
@@ -68,9 +230,12 @@ async function removeReviewAnnotation(annotationId: string, sessionId: string) {
     PREFIX ext: <http://mu.semte.ch/vocabularies/ext/>
     PREFIX oa: <http://www.w3.org/ns/oa#>
     PREFIX dct: <http://purl.org/dc/terms/>
+    PREFIX prov: <http://www.w3.org/ns/prov#>
 
     DELETE {
       ?existingReview ?p ?o.
+      ?correction ?cp ?co .
+      ?statement ?sp ?so .
     }
     WHERE {
       ?annotation a oa:Annotation .
@@ -81,6 +246,19 @@ async function removeReviewAnnotation(annotationId: string, sessionId: string) {
       ?existingReview oa:motivatedBy oa:assessing .
       ?existingReview dct:creator ${sparqlEscapeUri(sessionId)} .
       ?existingReview ?p ?o.
+
+      OPTIONAL {
+        ?existingReview prov:influenced ?correction .
+        ?correction a ext:CorrectionAnnotation .
+        ?correction dct:creator ${sparqlEscapeUri(sessionId)} .
+        ?correction ?cp ?co .
+
+        OPTIONAL {
+          ?correction oa:hasBody ?statement .
+          ?statement a rdf:Statement .
+          ?statement ?sp ?so .
+        }
+      }
     }`);
 }
 

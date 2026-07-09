@@ -1,3 +1,5 @@
+import { Config } from '../types';
+
 export default {
   targets: {
     expression: {
@@ -106,14 +108,20 @@ export default {
         }
       `,
       // can use to filter annotations for a given target, need to fix the set of agents once we have final uris for them
+      // also show human corrections
       annotationFilter: `
         ?object a skos:Concept .
         FILTER NOT EXISTS {
           ?object skos:inScheme <http://mu.semte.ch/vocabularies/ext/impact> .
         }
         
-        VALUES ?agent {
-          <http://lblod.data.gift/id/components/codelist-annotation/v1.0.0>
+        {
+          ?action prov:wasAssociatedWith ?agent .
+          FILTER (?agent IN (<http://lblod.data.gift/id/components/codelist-annotation/v1.0.0>))
+        }
+        UNION {
+          ?annotation a ext:CorrectionAnnotation .
+          ?action prov:wasAssociatedWith ?agent .
         }
       `,
 
@@ -282,4 +290,4 @@ export default {
         ?object <http://www.w3.org/2004/02/skos/core#exactMatch> ?objectLink .
   `,
   reviewBodyPrefix: 'http://mu.semte.ch/vocabularies/ext/annotation-review#',
-};
+} as Config;
