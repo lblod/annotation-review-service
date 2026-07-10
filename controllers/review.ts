@@ -74,11 +74,15 @@ async function addCorrection(
   correction: Correction,
 ) {
   if (correction.resourceUri) {
+    return addCorrectionByDirectResource(annotationId, sessionId, reviewUri, [
+      correction.resourceUri,
+    ]);
+  } else if (correction.resourceUris) {
     return addCorrectionByDirectResource(
       annotationTargetId,
       sessionId,
       reviewUri,
-      correction.resourceUri,
+      correction.resourceUris,
     );
   } else {
     return addCorrectionByStatement(
@@ -94,12 +98,20 @@ async function addCorrectionByDirectResource(
   annotationTargetId: string,
   sessionId: string,
   reviewUri: string,
-  resourceUri: string,
+  resourceUris: string[],
 ) {
+  if (resourceUris.length === 0) {
+    const error = new Error('No resource uris provided') as Error & {
+      status: number;
+    };
+    error['status'] = 400;
+    throw new Error();
+  }
   const correctionId = uuid();
   const correctionUri = `http://data.lblod.info/id/annotations/${correctionId}`;
   const activityId = uuid();
   const activityUri = `http://data.lblod.info/id/activities/${activityId}`;
+  const safeResourceUrisValues = resourceUris.map(sparqlEscapeUri).join('\n');
 
   await update(`
     PREFIX mu: <http://mu.semte.ch/vocabularies/core/>
@@ -113,7 +125,7 @@ async function addCorrectionByDirectResource(
       ?correction a ext:CorrectionAnnotation .
       ?correction oa:hasTarget ?target .
       ?correction dct:replaces ?annotation .
-      ?correction oa:hasBody ${sparqlEscapeUri(resourceUri)} .
+      ?correction oa:hasBody ?resourceUri .
       ?correction oa:motivatedBy oa:assessing .
       ?correction mu:uuid ?correctionId .
       ?correction dct:created ?now .
@@ -131,6 +143,9 @@ async function addCorrectionByDirectResource(
 
       VALUES ( ?correctionId ?correction ?activity ?activityId ) {
         ( ${sparqlEscapeString(correctionId)} ${sparqlEscapeUri(correctionUri)} ${sparqlEscapeUri(activityUri)} ${sparqlEscapeString(activityId)})
+      }
+      VALUES ?resourceUri {
+        ${safeResourceUrisValues}
       }
       BIND (NOW() AS ?now)
     }
