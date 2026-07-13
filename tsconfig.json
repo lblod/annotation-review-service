@@ -1,6 +1,6 @@
 {
   "compilerOptions": {
-    "types": ["mu-types"],
+    "types": ["mu-types", "node"],
     "lib": ["ES2016"],
     "allowSyntheticDefaultImports": true
   },
