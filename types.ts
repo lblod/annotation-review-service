@@ -6,6 +6,7 @@ export type Target = {
       query: string;
       variable: string;
       type: 'uri' | 'string' | 'search';
+      isAnnotationFilter?: boolean;
     } & {
       ignoreAlreadyReviewed?: boolean;
     };

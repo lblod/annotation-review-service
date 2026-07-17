@@ -107,6 +107,17 @@ export default {
           variable: 'valueType',
           type: 'uri',
         },
+        aValueTypes: {
+          isAnnotationFilter: true,
+          query: `
+            ?annotation oa:hasTarget / oa:hasSource ?target.
+            ?annotation oa:hasBody ?body.
+            ?body rdf:object ?object .
+            filter(?type = ?valueType)
+          `,
+          variable: 'valueType',
+          type: 'uri',
+        },
       },
       titlePath: `
         OPTIONAL {
