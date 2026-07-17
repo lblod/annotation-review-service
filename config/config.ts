@@ -93,6 +93,20 @@ export default {
           variable: 'aiModel',
           type: 'uri',
         },
+        valueTypes: {
+          query: `
+            ?annotationT oa:hasTarget / oa:hasSource ?target.
+            ?annotationT oa:hasBody ?bodyT.
+            ?bodyT rdf:object ?object .
+            optional {
+              ?object a ?typeClass .
+            }
+            bind(if(isIRI(?typeClass), ?typeClass, datatype(?object)) as ?type)
+            filter(?type = ?valueType)
+          `,
+          variable: 'valueType',
+          type: 'uri',
+        },
       },
       titlePath: `
         OPTIONAL {
