@@ -73,6 +73,15 @@ export default {
           variable: 'search',
           type: 'search',
         },
+        predicate: {
+          query: `
+            ?annotationT oa:hasTarget / oa:hasSource ?target.
+            ?annotationT oa:hasBody ?bodyT.
+            ?bodyT rdf:predicate ?predicateUri .             
+          `,
+          variable: 'predicateUri',
+          type: 'uri',
+        },
       },
       titlePath: `
         OPTIONAL {
