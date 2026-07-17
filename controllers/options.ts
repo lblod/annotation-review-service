@@ -42,3 +42,28 @@ export async function fetchAiModels() {
     value: result.model.value,
   }));
 }
+
+export async function fetchValueTypes() {
+  const queryString = `
+    prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+
+    select distinct ?type
+    where {
+      ?body rdf:object ?object .
+      optional {
+        ?object a ?typeClass .
+      }
+      bind(if(isIRI(?typeClass), ?typeClass, datatype(?object)) as ?type)
+    }
+  `;
+
+  const sparqlResult = await query(queryString);
+  const values = sparqlResult.results?.bindings ?? [];
+
+  return values
+    .map((result) => ({
+      key: result.type?.value,
+      value: result.type?.value,
+    }))
+    .filter((_pair) => _pair.key && _pair.key.trim() !== '');
+}
