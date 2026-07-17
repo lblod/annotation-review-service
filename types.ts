@@ -74,3 +74,8 @@ export type Config = {
   defaultLinkPath: string;
   reviewBodyPrefix: string;
 };
+
+export type KeyValuePair = {
+  key: string;
+  value: string;
+};

@@ -17,6 +17,7 @@ import {
   reviewAnnotationTarget,
 } from './controllers/review';
 import { Correction, Filters } from './types';
+import { optionsRouter } from './routers/options';
 
 // we want filter[foo]=bar&filter[id]=1
 app.set('query parser', (str: string) => qs.parse(str, { depth: 10 }));
@@ -36,6 +37,8 @@ app.use(express.urlencoded({ extended: true }));
 app.get('/health', async (_req, res) => {
   res.send({ status: 'ok' });
 });
+
+app.use('/options', optionsRouter);
 
 app.get('/targets/:type', async (req, res) => {
   const type = req.params.type;

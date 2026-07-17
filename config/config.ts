@@ -73,7 +73,7 @@ export default {
           variable: 'search',
           type: 'search',
         },
-        predicate: {
+        predicates: {
           query: `
             ?annotationT oa:hasTarget / oa:hasSource ?target.
             ?annotationT oa:hasBody ?bodyT.
