@@ -107,6 +107,15 @@ export default {
           variable: 'valueType',
           type: 'uri',
         },
+        aAiModels: {
+          query: `
+            ?activityT prov:generated ?annotation .
+            ?activityT prov:wasAssociatedWith ?somethingElse .
+            ?somethingElse prov:specializationOf ?aiModel .
+          `,
+          variable: 'aiModel',
+          type: 'uri',
+        },
         aValueTypes: {
           isAnnotationFilter: true,
           query: `
