@@ -108,6 +108,7 @@ export default {
           type: 'uri',
         },
         aPredicates: {
+          isAnnotationFilter: true,
           query: `
             ?annotation oa:hasTarget / oa:hasSource ?target.
             ?annotation oa:hasBody ?body.
@@ -117,6 +118,7 @@ export default {
           type: 'uri',
         },
         aAiModels: {
+          isAnnotationFilter: true,
           query: `
             ?activityT prov:generated ?annotation .
             ?activityT prov:wasAssociatedWith ?somethingElse .
