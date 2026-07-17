@@ -107,6 +107,15 @@ export default {
           variable: 'valueType',
           type: 'uri',
         },
+        aPredicates: {
+          query: `
+            ?annotation oa:hasTarget / oa:hasSource ?target.
+            ?annotation oa:hasBody ?body.
+            ?body rdf:predicate ?predicateUri .             
+          `,
+          variable: 'predicateUri',
+          type: 'uri',
+        },
         aAiModels: {
           query: `
             ?activityT prov:generated ?annotation .
