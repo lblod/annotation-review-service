@@ -12,6 +12,7 @@ export default {
         PREFIX eli: <http://data.europa.eu/eli/ontology#>
         PREFIX org: <http://www.w3.org/ns/org#>
         PREFIX ext: <http://mu.semte.ch/vocabularies/ext/>
+        PREFIX prov: <http://www.w3.org/ns/prov#>
       `,
       // can also use to filter ?annotation in case we want to filter the kind of annotations to show
       // note that we have to filter by expressions having a work because other expressions are created
@@ -80,6 +81,16 @@ export default {
             ?bodyT rdf:predicate ?predicateUri .             
           `,
           variable: 'predicateUri',
+          type: 'uri',
+        },
+        aiModels: {
+          query: `
+            ?annotationT oa:hasTarget / oa:hasSource ?target .
+            ?activityT prov:generated ?annotationT .
+            ?activityT prov:wasAssociatedWith ?something .
+            ?something prov:specializationOf ?aiModel .
+          `,
+          variable: 'aiModel',
           type: 'uri',
         },
       },

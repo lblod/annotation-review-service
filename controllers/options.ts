@@ -23,3 +23,22 @@ export async function fetchExpressionPredicates(): Promise<Array<KeyValuePair>> 
     value: result.predicateUri.value,
   }));
 }
+
+export async function fetchAiModels() {
+  const queryString = `
+    prefix prov: <http://www.w3.org/ns/prov#>
+
+    select distinct ?model
+    where {
+      ?s prov:specializationOf ?model .
+    }
+  `;
+
+  const sparqlResult = await query(queryString);
+  const values = sparqlResult.results?.bindings ?? [];
+
+  return values.map((result) => ({
+    key: result.model.value,
+    value: result.model.value,
+  }));
+}
