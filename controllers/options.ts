@@ -9,9 +9,9 @@ export async function fetchExpressionPredicates(): Promise<Array<KeyValuePair>> 
 
     select distinct ?predicateUri
     where {
-      ?annotationT oa:hasTarget / oa:hasSource ?target.
-      ?annotationT oa:hasBody ?bodyT.
-      ?bodyT rdf:predicate ?predicateUri .
+      ?annotation oa:hasTarget / oa:hasSource ?target.
+      ?annotation oa:hasBody ?body.
+      ?body rdf:predicate ?predicateUri .
     }
   `;
 
@@ -24,7 +24,7 @@ export async function fetchExpressionPredicates(): Promise<Array<KeyValuePair>> 
   }));
 }
 
-export async function fetchAiModels() {
+export async function fetchAiModels(): Promise<Array<KeyValuePair>> {
   const queryString = `
     prefix prov: <http://www.w3.org/ns/prov#>
 
@@ -43,7 +43,7 @@ export async function fetchAiModels() {
   }));
 }
 
-export async function fetchValueTypes() {
+export async function fetchValueTypes(): Promise<Array<KeyValuePair>> {
   const queryString = `
     prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
 

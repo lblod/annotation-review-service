@@ -1,7 +1,10 @@
 import { FilterConfig, Filters } from '../types';
 import { sparqlEscapeUri, sparqlEscapeString } from 'mu';
 
-export function buildFilterString(filterConfigs: { [key: string]: FilterConfig }, filters: Filters) {
+export function buildFilterString(
+  filterConfigs: { [key: string]: FilterConfig },
+  filters: Filters,
+) {
   let filterString = '';
 
   Object.keys(filters || {}).forEach((key) => {
@@ -59,4 +62,3 @@ export function buildFilterAlreadyReviewed(
     }
   `;
 }
-

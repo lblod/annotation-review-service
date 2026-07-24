@@ -5,7 +5,6 @@ import {
   fetchValueTypes,
 } from '../controllers/options';
 import { KeyValuePair } from '../types';
-import config from '../config/config';
 
 export const optionsRouter = Router();
 
