@@ -290,4 +290,4 @@ export default {
         ?object <http://www.w3.org/2004/02/skos/core#exactMatch> ?objectLink .
   `,
   reviewBodyPrefix: 'http://mu.semte.ch/vocabularies/ext/annotation-review#',
-};
+} as Config;
