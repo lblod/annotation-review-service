@@ -44,10 +44,17 @@ export type AnnotationCounts = {
 export type Correction =
   | {
       resourceUri: string;
+      resourceUris?: never;
       statement?: never;
     }
   | {
       resourceUri?: never;
+      resourceUris: string[];
+      statement?: never;
+    }
+  | {
+      resourceUri?: never;
+      resourceUris?: never;
       statement: Statement;
     };
 
