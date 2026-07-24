@@ -11,7 +11,6 @@ import { getAnnotationCounts } from './review';
 import {
   buildFilterAlreadyReviewed,
   buildFilterString,
-  mapToAnnotationFilters,
 } from '../utils/filters';
 
 export async function getAllAnnotationCountForTarget(
@@ -19,7 +18,6 @@ export async function getAllAnnotationCountForTarget(
   target: Target,
   filters = {} as Filters,
 ) {
-  const annotationFilters = mapToAnnotationFilters(target, filters);
   const filterAlreadyReviewed = buildFilterAlreadyReviewed(sessionId, filters);
   const result = await query(`
     ${target.prefixes}
@@ -48,7 +46,7 @@ export async function getAllAnnotationCountForTarget(
       ?action prov:wasAssociatedWith ?agent .
       ${target.annotationFilter}
 
-      ${buildFilterString(target, annotationFilters)}
+      ${buildFilterString(target.filters.annotation, filters)}
 
       ${filterAlreadyReviewed}
     }
@@ -405,7 +403,7 @@ export function buildAnnotationWhere(
     }`;
   }
 
-  const filterString = buildFilterString(target, mapToAnnotationFilters(target, filters));
+  const filterString = buildFilterString(target.filters.annotation, filters);
   return `
     ${valuesStatement}
 

@@ -1,11 +1,11 @@
-import { Filters, Target } from '../types';
+import { FilterConfig, Filters } from '../types';
 import { sparqlEscapeUri, sparqlEscapeString } from 'mu';
 
-export function buildFilterString(target: Target, filters: Filters) {
+export function buildFilterString(filterConfigs: { [key: string]: FilterConfig }, filters: Filters) {
   let filterString = '';
 
   Object.keys(filters || {}).forEach((key) => {
-    const filterConfig = target.filters[key];
+    const filterConfig = filterConfigs[key];
     if (!filterConfig) {
       return;
     }
@@ -60,17 +60,3 @@ export function buildFilterAlreadyReviewed(
   `;
 }
 
-export function mapToAnnotationFilters(target: Target, filters: Filters): Filters {
-  const result: Filters = {};
-  Object.entries(filters || {}).forEach(([key, value]) => {
-    const annotationEntry = Object.entries(target.filters).find(
-      ([filterKey, filterConfig]) =>
-        filterConfig.isAnnotationFilter &&
-        filterKey.slice(1).toLowerCase() === key.toLowerCase(),
-    );
-    if (annotationEntry) {
-      result[annotationEntry[0]] = value;
-    }
-  });
-  return result;
-}

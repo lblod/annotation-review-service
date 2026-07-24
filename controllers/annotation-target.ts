@@ -117,7 +117,7 @@ export function getTargetSelector(
   target: Target,
   filters: { [filterName: string]: string },
 ) {
-  const filterString = buildFilterString(target, filters);
+  const filterString = buildFilterString(target.filters.target, filters);
 
   return `
       ${target.targetFilter}

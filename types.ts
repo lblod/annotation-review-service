@@ -1,15 +1,15 @@
+export type FilterConfig = {
+  query: string;
+  variable: string;
+  type: 'uri' | 'string' | 'search';
+};
+
 export type Target = {
   annotationFilter: string;
   annotationPath: string;
   filters: {
-    [filterName: string]: {
-      query: string;
-      variable: string;
-      type: 'uri' | 'string' | 'search';
-      isAnnotationFilter?: boolean;
-    } & {
-      ignoreAlreadyReviewed?: boolean;
-    };
+    target: { [filterName: string]: FilterConfig };
+    annotation: { [filterName: string]: FilterConfig };
   };
   label: string;
   prefixes: string;
