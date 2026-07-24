@@ -43,13 +43,19 @@ export async function getTargets(
     getTargetAnnotationCount(target, targetIds, filters),
     getTargetAnnotationCount(target, targetIds, filters, true),
   ]);
-  return targets.map((t) => {
-    return {
-      ...t,
-      annotationCount: counts[t.id],
-      annotationReviewedCount: countsReviewed[t.id],
-    };
-  });
+  return targets
+    .map((t) => {
+      if (!counts[t.id]) {
+        return null;
+      }
+
+      return {
+        ...t,
+        annotationCount: counts[t.id],
+        annotationReviewedCount: countsReviewed[t.id],
+      };
+    })
+    .filter((targetWithAnnotations) => targetWithAnnotations);
 }
 
 async function getTargetAnnotationCount(
