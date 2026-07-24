@@ -59,3 +59,18 @@ export function buildFilterAlreadyReviewed(
     }
   `;
 }
+
+export function mapToAnnotationFilters(target: Target, filters: Filters): Filters {
+  const result: Filters = {};
+  Object.entries(filters || {}).forEach(([key, value]) => {
+    const annotationEntry = Object.entries(target.filters).find(
+      ([filterKey, filterConfig]) =>
+        filterConfig.isAnnotationFilter &&
+        filterKey.slice(1).toLowerCase() === key.toLowerCase(),
+    );
+    if (annotationEntry) {
+      result[annotationEntry[0]] = value;
+    }
+  });
+  return result;
+}

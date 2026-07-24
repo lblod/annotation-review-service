@@ -11,13 +11,15 @@ import { getAnnotationCounts } from './review';
 import {
   buildFilterAlreadyReviewed,
   buildFilterString,
+  mapToAnnotationFilters,
 } from '../utils/filters';
 
 export async function getAllAnnotationCountForTarget(
   sessionId: string,
   target: Target,
-  filters = {},
+  filters = {} as Filters,
 ) {
+  const annotationFilters = mapToAnnotationFilters(target, filters);
   const filterAlreadyReviewed = buildFilterAlreadyReviewed(sessionId, filters);
   const result = await query(`
     ${target.prefixes}
@@ -30,7 +32,7 @@ export async function getAllAnnotationCountForTarget(
       ?target mu:uuid ?uuid .
 
       ${target.annotationPath}
-      
+
       {
         ?annotation oa:hasBody ?body .
         ?body rdf:predicate ?predicate .
@@ -41,15 +43,15 @@ export async function getAllAnnotationCountForTarget(
           ?object rdf:object ?something .
         }
       }
-        
+
       ?action prov:generated ?annotation .
       ?action prov:wasAssociatedWith ?agent .
       ${target.annotationFilter}
 
-      ${buildFilterString(target, filters)}
+      ${buildFilterString(target, annotationFilters)}
 
       ${filterAlreadyReviewed}
-    } 
+    }
   `);
   return parseInt(result.results.bindings[0].count.value);
 }
@@ -71,7 +73,7 @@ export async function getAnnotationCountForTarget(
     WHERE {
       ${buildAnnotationWhere(target, [targetId], filters)}
       ${buildFilterAlreadyReviewed(sessionId, filters)}
-    }    
+    }
   `);
   return parseInt(result.results.bindings[0].count.value);
 }
@@ -403,7 +405,7 @@ export function buildAnnotationWhere(
     }`;
   }
 
-  const filterString = buildFilterString(target, filters);
+  const filterString = buildFilterString(target, mapToAnnotationFilters(target, filters));
   return `
     ${valuesStatement}
 

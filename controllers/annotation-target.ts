@@ -1,4 +1,4 @@
-import { Target } from '../types';
+import { Filters, Target } from '../types';
 import { query } from 'mu';
 import { buildAnnotationWhere } from './annotations';
 import { buildFilterString } from '../utils/filters';
@@ -40,8 +40,8 @@ export async function getTargets(
   });
 
   const [counts, countsReviewed] = await Promise.all([
-    getTargetAnnotationCount(target, targetIds),
-    getTargetAnnotationCount(target, targetIds, true),
+    getTargetAnnotationCount(target, targetIds, filters),
+    getTargetAnnotationCount(target, targetIds, filters, true),
   ]);
   return targets.map((t) => {
     return {
@@ -55,6 +55,7 @@ export async function getTargets(
 async function getTargetAnnotationCount(
   target: Target,
   targetIds: string[],
+  filters = {} as Filters,
   reviewed = false,
 ) {
   let reviewedFilter = '';
@@ -79,7 +80,7 @@ async function getTargetAnnotationCount(
     SELECT ?targetId (COUNT(DISTINCT ?annotation) as ?count) 
     
     WHERE {
-      ${buildAnnotationWhere(target, targetIds)}
+      ${buildAnnotationWhere(target, targetIds, filters)}
 
       ${reviewedFilter}
     } GROUP BY ?targetId
