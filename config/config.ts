@@ -188,7 +188,8 @@ export default {
         ?target a eli:Expression . 
       `,
       filters: {
-        target: {
+        target: {},
+        annotation: {
           conceptScheme: {
             query: `
               ?annotation oa:hasBody ?concept .
@@ -275,7 +276,6 @@ export default {
             type: 'string',
           },
         },
-        annotation: {},
       },
       titlePath: `
         OPTIONAL {
