@@ -13,10 +13,12 @@ export function buildFilterString(
       return;
     }
 
-    filterString += `
-      FILTER EXISTS {
-        ${filterConfig.query}
-    `;
+    if (filterConfig.query) {
+      filterString += `
+        FILTER EXISTS {
+          ${filterConfig.query}
+      `;
+    }
 
     if (filterConfig.type === 'search') {
       // eslint-disable-next-line
@@ -26,23 +28,26 @@ export function buildFilterString(
       return;
     }
 
-    const filterValues = filters[key]
-      .split(',')
-      .map((filterValue) => {
-        switch (filterConfig.type) {
-          case 'uri':
-            return sparqlEscapeUri(filterValue);
-          default:
-            return sparqlEscapeString(filterValue);
-        }
-      })
-      .join('\n');
-    filterString += `
+    const filterValueArray = filters[key].split(',').map((filterValue) => {
+      switch (filterConfig.type) {
+        case 'uri':
+          return sparqlEscapeUri(filterValue);
+        default:
+          return sparqlEscapeString(filterValue);
+      }
+    });
+
+    if (filterConfig.query) {
+      const filterValues = filterValueArray.join('\n');
+      filterString += `
       VALUES ?${filterConfig.variable} {
         ${filterValues} 
       }
     }
     `;
+    } else {
+      filterString += `filter(?${filterConfig.variable} IN (${filterValueArray.join(',\n')}))`;
+    }
   });
   return filterString;
 }

@@ -129,13 +129,7 @@ export default {
             type: 'uri',
           },
           valueTypes: {
-            query: `
-              ?annotation oa:hasTarget / oa:hasSource ?target.
-              ?annotation oa:hasBody ?body.
-              ?body rdf:object ?object .
-              filter(?type = ?valueType)
-            `,
-            variable: 'valueType',
+            variable: 'type',
             type: 'uri',
           },
         },

@@ -1,5 +1,5 @@
 export type FilterConfig = {
-  query: string;
+  query?: string;
   variable: string;
   type: 'uri' | 'string' | 'search';
 };
