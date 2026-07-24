@@ -112,7 +112,6 @@ export default {
         annotation: {
           predicates: {
             query: `
-              ?annotation oa:hasTarget / oa:hasSource ?target.
               ?annotation oa:hasBody ?body.
               ?body rdf:predicate ?predicateUri .
             `,
@@ -121,9 +120,7 @@ export default {
           },
           aiModels: {
             query: `
-              ?activityT prov:generated ?annotation .
-              ?activityT prov:wasAssociatedWith ?somethingElse .
-              ?somethingElse prov:specializationOf ?aiModel .
+              ?agent prov:specializationOf ?aiModel .
             `,
             variable: 'aiModel',
             type: 'uri',
