@@ -1,14 +1,15 @@
+export type FilterConfig = {
+  query?: string;
+  variable: string;
+  type: 'uri' | 'string' | 'search';
+};
+
 export type Target = {
   annotationFilter: string;
   annotationPath: string;
   filters: {
-    [filterName: string]: {
-      query: string;
-      variable: string;
-      type: 'uri' | 'string' | 'search';
-    } & {
-      ignoreAlreadyReviewed?: boolean;
-    };
+    target: { [filterName: string]: FilterConfig };
+    annotation: { [filterName: string]: FilterConfig };
   };
   label: string;
   prefixes: string;
@@ -73,4 +74,9 @@ export type Config = {
   defaultTextPath: string;
   defaultLinkPath: string;
   reviewBodyPrefix: string;
+};
+
+export type KeyValuePair = {
+  key: string;
+  value: string;
 };

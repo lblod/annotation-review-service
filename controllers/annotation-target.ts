@@ -1,4 +1,4 @@
-import { Target } from '../types';
+import { Filters, Target } from '../types';
 import { query } from 'mu';
 import { buildAnnotationWhere } from './annotations';
 import { buildFilterString } from '../utils/filters';
@@ -40,21 +40,28 @@ export async function getTargets(
   });
 
   const [counts, countsReviewed] = await Promise.all([
-    getTargetAnnotationCount(target, targetIds),
-    getTargetAnnotationCount(target, targetIds, true),
+    getTargetAnnotationCount(target, targetIds, filters),
+    getTargetAnnotationCount(target, targetIds, filters, true),
   ]);
-  return targets.map((t) => {
-    return {
-      ...t,
-      annotationCount: counts[t.id],
-      annotationReviewedCount: countsReviewed[t.id],
-    };
-  });
+  return targets
+    .map((t) => {
+      if (!counts[t.id]) {
+        return null;
+      }
+
+      return {
+        ...t,
+        annotationCount: counts[t.id],
+        annotationReviewedCount: countsReviewed[t.id],
+      };
+    })
+    .filter((targetWithAnnotations) => targetWithAnnotations);
 }
 
 async function getTargetAnnotationCount(
   target: Target,
   targetIds: string[],
+  filters = {} as Filters,
   reviewed = false,
 ) {
   let reviewedFilter = '';
@@ -79,7 +86,7 @@ async function getTargetAnnotationCount(
     SELECT ?targetId (COUNT(DISTINCT ?annotation) as ?count) 
     
     WHERE {
-      ${buildAnnotationWhere(target, targetIds)}
+      ${buildAnnotationWhere(target, targetIds, filters)}
 
       ${reviewedFilter}
     } GROUP BY ?targetId
@@ -116,7 +123,7 @@ export function getTargetSelector(
   target: Target,
   filters: { [filterName: string]: string },
 ) {
-  const filterString = buildFilterString(target, filters);
+  const filterString = buildFilterString(target.filters.target, filters);
 
   return `
       ${target.targetFilter}
