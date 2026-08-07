@@ -390,7 +390,6 @@ export function buildAnnotationWhere(
   targetIds: string[],
   filters = {},
 ) {
-
   const values = targetIds
     .map((id) => {
       return sparqlEscapeString(id);
@@ -405,21 +404,6 @@ export function buildAnnotationWhere(
   }
 
   const filterString = buildFilterString(target.filters.annotation, filters);
-
-
-    console.log('**********');
-    console.log('**********');
-    console.log('**********');
-    console.log('**********');
-    console.log('**********');
-      console.log('**********');
-      console.log(target.annotationFilter);
-      console.log('**********');
-      console.log('**********');
-      console.log('**********');
-      console.log('**********');
-      console.log('**********');
-        console.log('**********');
   return `
     ${valuesStatement}
 
