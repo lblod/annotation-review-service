@@ -219,6 +219,14 @@ export default {
             variable: 'municipality',
             type: 'uri',
           },
+          province: {
+            query: `
+              ?target <http://mu.semte.ch/vocabularies/ext/owningBody> ?municipality .
+              ?province <http://www.w3.org/ns/org#hasSubOrganization> ?municipality .
+            `,
+            variable: 'province',
+            type: 'uri',
+          },
           otherMunicipality: {
             // weirdly NOT IN gives an error in virtuoso's cost model
             query: `
