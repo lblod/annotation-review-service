@@ -221,8 +221,17 @@ export default {
           },
           province: {
             query: `
-              ?target <http://mu.semte.ch/vocabularies/ext/owningBody> ?municipality .
-              ?province <http://www.w3.org/ns/org#hasSubOrganization> ?municipality .
+              {
+                ?target <http://mu.semte.ch/vocabularies/ext/owningBody> ?municipality .
+                ?municipality <http://data.vlaanderen.be/ns/besluit#classificatie> <http://data.vlaanderen.be/id/concept/BestuurseenheidClassificatieCode/5ab0e9b8a3b2ca7c5e000001> .
+                ?province <http://www.w3.org/ns/org#hasSubOrganization> ?municipality .
+                ?province <http://data.vlaanderen.be/ns/besluit#classificatie> <http://data.vlaanderen.be/id/concept/BestuurseenheidClassificatieCode/5ab0e9b8a3b2ca7c5e000000> .
+              }
+              UNION
+              {
+                ?target <http://mu.semte.ch/vocabularies/ext/owningBody> ?province .
+                ?province <http://data.vlaanderen.be/ns/besluit#classificatie> <http://data.vlaanderen.be/id/concept/BestuurseenheidClassificatieCode/5ab0e9b8a3b2ca7c5e000000> .
+              }
             `,
             variable: 'province',
             type: 'uri',
