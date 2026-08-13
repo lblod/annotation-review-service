@@ -221,12 +221,12 @@ async function getAnnotationsData(
     PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
     PREFIX bif:     <http://www.openlinksw.com/schemas/bif#>
 
-    SELECT DISTINCT ?annotation ?annotationId ?target ?targetId ?predicate ?object ?agent ?agentName ?type 
+    SELECT DISTINCT ?annotation ?annotationId ?target ?targetId ?predicate ?object ?agent ?agentName ?type
     WHERE {
       ${buildAnnotationWhere(target, targetId ? [targetId] : [], filters)}
       ${buildFilterAlreadyReviewed(sessionId, filters)}
-    }    
-    ORDER BY ?predicate ?annotation
+    }
+    ORDER BY ?target ?predicate ?annotation
     LIMIT ${pageSize}
     OFFSET ${offset}
   `);
@@ -298,7 +298,7 @@ async function getObjectTexts(annotations: Annotation[]) {
       VALUES (?annotation ?object) {
         ${safeValues}
       }
-      ${unionStatements.join('\nUNION\n')}      
+      ${unionStatements.join('\nUNION\n')}
     }
   `);
 
@@ -353,7 +353,7 @@ async function getObjectLinks(annotations: Annotation[]) {
       VALUES ?object {
         ${valueInfo.map((t) => sparqlEscapeUri(t.value)).join('\n')}
       }
-      ${unionStatements.join('\nUNION\n')}      
+      ${unionStatements.join('\nUNION\n')}
     }
   `);
 
@@ -437,7 +437,6 @@ export function buildAnnotationWhere(
 
     ${target.annotationFilter}`;
 }
-
 export async function getTargetData(target: Target, targetId?: string) {
   let targetValueFilter = '';
   if (targetId) {
@@ -451,7 +450,7 @@ export async function getTargetData(target: Target, targetId?: string) {
     PREFIX oa: <http://www.w3.org/ns/oa#>
     PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
     PREFIX mu: <http://mu.semte.ch/vocabularies/core/>
-    
+
     SELECT ?target ?title ?uuid
     WHERE {
       ${targetValueFilter}
