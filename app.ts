@@ -96,6 +96,10 @@ app.get('/annotations/:type', async (req, res) => {
   const sessionId = req.get('mu-session-id') as string;
 
   const filters = req.query.filter as unknown as Filters;
+  let isFetchingCount = true;
+  if (req.query.isFetchingCount == 'false') {
+    isFetchingCount = false;
+  }
 
   const target = config.targets[type];
   if (!target) {
@@ -104,11 +108,21 @@ app.get('/annotations/:type', async (req, res) => {
   }
   const page = parseInt(req.query.page as string) || 0;
   const pageSize = parseInt(req.query.pageSize as string) || 10;
-
-  const [annotationCount, annotations] = await Promise.all([
-    getAllAnnotationCountForTarget(sessionId, target, filters),
-    getAllAnnotationsForTarget(sessionId, target, filters, page, pageSize),
-  ]);
+  let annotationCount = undefined;
+  if (isFetchingCount) {
+    annotationCount = await getAllAnnotationCountForTarget(
+      sessionId,
+      target,
+      filters,
+    );
+  }
+  const annotations = await getAllAnnotationsForTarget(
+    sessionId,
+    target,
+    filters,
+    page,
+    pageSize,
+  );
   const enrichedAnnotations = await enrichAnnotationsWithRdfsComments(
     annotations.annotations,
   );
