@@ -8,6 +8,7 @@ export async function getTargets(
   filters: { [filterName: string]: string },
   page: number,
   pageSize: number,
+  isFetchingReviewCounts = true,
 ) {
   const offset = page * pageSize;
 
@@ -39,8 +40,12 @@ export async function getTargets(
     };
   });
 
+  if (!isFetchingReviewCounts) {
+    return targets;
+  }
+
   const [counts, countsReviewed] = await Promise.all([
-    getTargetAnnotationCount(target, targetIds, filters),
+    getTargetAnnotationCount(target, targetIds, filters), // Isn't this duplicate fetching from count above?
     getTargetAnnotationCount(target, targetIds, filters, true),
   ]);
   return targets

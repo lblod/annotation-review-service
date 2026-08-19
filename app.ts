@@ -41,6 +41,7 @@ app.get('/health', async (_req, res) => {
 app.use('/options', optionsRouter);
 
 app.get('/targets/:type', async (req, res) => {
+  const isFetchingReviewCounts = Boolean(req.query?.isFetchingReviewCounts);
   const type = req.params.type;
   const filters = req.query.filter as unknown as Filters;
 
@@ -54,7 +55,7 @@ app.get('/targets/:type', async (req, res) => {
 
   const [count, targets] = await Promise.all([
     getTargetCount(target, filters),
-    getTargets(target, filters, page, pageSize),
+    getTargets(target, filters, page, pageSize, isFetchingReviewCounts),
   ]);
 
   res.send({ targets, count });
