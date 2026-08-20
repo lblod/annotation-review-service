@@ -1,7 +1,7 @@
 import { Filters, Target } from '../types';
-import { query } from 'mu';
 import { buildAnnotationWhere } from './annotations';
 import { buildFilterString } from '../utils/filters';
+import { timedQuery } from '../utils/timed-query';
 
 export async function getTargets(
   target: Target,
@@ -12,7 +12,7 @@ export async function getTargets(
 ) {
   const offset = page * pageSize;
 
-  const result = await query(`
+  const result = await timedQuery(`
     ${target.prefixes}
     PREFIX oa: <http://www.w3.org/ns/oa#>
     PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
@@ -45,7 +45,7 @@ export async function getTargets(
   }
 
   const [counts, countsReviewed] = await Promise.all([
-    getTargetAnnotationCount(target, targetIds, filters), // Isn't this duplicate fetching from count above?
+    getTargetAnnotationCount(target, targetIds, filters),
     getTargetAnnotationCount(target, targetIds, filters, true),
   ]);
   return targets
@@ -78,7 +78,7 @@ async function getTargetAnnotationCount(
       } 
     `;
   }
-  const results = await query(`
+  const results = await timedQuery(`
     ${target.prefixes}
     PREFIX oa: <http://www.w3.org/ns/oa#>
     PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
@@ -109,7 +109,7 @@ export async function getTargetCount(
   target: Target,
   filters: { [filterName: string]: string },
 ) {
-  const result = await query(`
+  const result = await timedQuery(`
     ${target.prefixes}
     PREFIX oa: <http://www.w3.org/ns/oa#>
     PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
