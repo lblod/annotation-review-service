@@ -41,7 +41,7 @@ export default {
         ?annotation oa:hasTarget ?resource .
         ?resource oa:hasSource / ^eli:is_realized_by? ?target .
       `,
-      bodyType: true,
+      bodyType: 'statement',
       filters: {
         target: {
           municipality: {
@@ -189,7 +189,7 @@ export default {
         ?annotation oa:hasTarget ?target .
         ?target a eli:Expression .
       `,
-      bodyType: false,
+      bodyType: 'direct',
       filters: {
         target: {},
         annotation: {
