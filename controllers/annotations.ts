@@ -5,7 +5,8 @@ import {
   Filters,
   Target,
 } from '../types';
-import { query, sparqlEscapeString, sparqlEscapeUri } from 'mu';
+import { sparqlEscapeString, sparqlEscapeUri } from 'mu';
+import { timedQuery } from '../utils/timed-query';
 import config from '../config/config';
 import { getAnnotationCounts } from './review';
 import {
@@ -19,7 +20,7 @@ export async function getAllAnnotationCountForTarget(
   filters = {} as Filters,
 ) {
   const filterAlreadyReviewed = buildFilterAlreadyReviewed(sessionId, filters);
-  const result = await query(`
+  const result = await timedQuery(`
     ${target.prefixes}
     PREFIX oa: <http://www.w3.org/ns/oa#>
     PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
@@ -60,7 +61,7 @@ export async function getAnnotationCountForTarget(
   targetId: string,
   filters = {} as Filters,
 ) {
-  const result = await query(`
+  const result = await timedQuery(`
     ${target.prefixes}
     PREFIX oa: <http://www.w3.org/ns/oa#>
     PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
@@ -119,7 +120,7 @@ export async function enrichAnnotationsWithRdfsComments(
     .filter((a) => !!a)
     .map(sparqlEscapeUri)
     .join('\n');
-  const results = await query(`
+  const results = await timedQuery(`
   PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
   SELECT ?uri ?comment WHERE {
     VALUES ?uri {
@@ -211,7 +212,7 @@ async function getAnnotationsData(
   filters = {} as Filters,
 ) {
   const offset = page * pageSize;
-  const result = await query(`
+  const result = await timedQuery(`
     ${target.prefixes}
     PREFIX oa: <http://www.w3.org/ns/oa#>
     PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
@@ -292,7 +293,7 @@ async function getObjectTexts(annotations: Annotation[]) {
     })
     .join('\n');
 
-  const result = await query(`
+  const result = await timedQuery(`
     SELECT ?annotation ?object ?objectText
     WHERE {
       VALUES (?annotation ?object) {
@@ -347,7 +348,7 @@ async function getObjectLinks(annotations: Annotation[]) {
     return {};
   }
 
-  const result = await query(`
+  const result = await timedQuery(`
     SELECT ?object ?objectLink
     WHERE {
       VALUES ?object {
@@ -366,7 +367,7 @@ async function getObjectLinks(annotations: Annotation[]) {
 }
 
 async function getImpact(annotations: Annotation[]) {
-  const result = await query(`
+  const result = await timedQuery(`
     SELECT ?annotation ?impact
     WHERE {
       VALUES ?annotation {
@@ -445,7 +446,7 @@ export async function getTargetData(target: Target, targetId?: string) {
     }`;
   }
 
-  const result = await query(`
+  const result = await timedQuery(`
     ${target.prefixes}
     PREFIX oa: <http://www.w3.org/ns/oa#>
     PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
