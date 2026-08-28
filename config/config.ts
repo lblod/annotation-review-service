@@ -41,6 +41,7 @@ export default {
         ?annotation oa:hasTarget ?resource .
         ?resource oa:hasSource / ^eli:is_realized_by? ?target .
       `,
+      bodyType: true,
       filters: {
         target: {
           municipality: {
@@ -154,6 +155,7 @@ export default {
         PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
         PREFIX mu: <http://mu.semte.ch/vocabularies/core/>
         PREFIX org: <http://www.w3.org/ns/org#>
+        PREFIX dct: <http://purl.org/dc/terms/>
         PREFIX ext: <http://mu.semte.ch/vocabularies/ext/>
       `,
       // can also use to filter ?annotation in case we want to filter the kind of annotations to show
@@ -187,19 +189,15 @@ export default {
         ?annotation oa:hasTarget ?target .
         ?target a eli:Expression .
       `,
+      bodyType: false,
       filters: {
         target: {},
         annotation: {
           conceptScheme: {
             query: `
-              ?annotation oa:hasBody ?concept .
-              {
-                ?concept skos:inScheme ?scheme .
-                ?scheme mu:uuid ?schemeId.
-              } UNION {
-                ?concept a <http://mu.semte.ch/vocabularies/ext/NoMatchFound>.
-                ?scheme mu:uuid ?schemeId.
-              }
+              ?task prov:generated ?annotation .
+              ?task dct:isPartOf ?job .
+              ?job ext:codelist / mu:uuid ?schemeId.
             `,
             variable: 'schemeId',
             type: 'string',
