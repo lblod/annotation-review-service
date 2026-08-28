@@ -20,7 +20,7 @@ export async function getAllAnnotationCountForTarget(
   filters = {} as Filters,
 ) {
   const filterAlreadyReviewed = buildFilterAlreadyReviewed(sessionId, filters);
-  let objectPath = `?annotation oa:hasBody ?object .`;
+  let objectPath = '?annotation oa:hasBody ?object .';
   if (target.bodyType === 'statement') {
     objectPath = `?annotation oa:hasBody ?body .
         ?body rdf:predicate ?predicate .
@@ -412,7 +412,7 @@ export function buildAnnotationWhere(
     }`;
   }
 
-  let objectPath = `?annotation oa:hasBody ?object .`;
+  let objectPath = '?annotation oa:hasBody ?object .';
   if (target.bodyType === 'statement') {
     objectPath = `?annotation oa:hasBody ?body .
       ?body rdf:predicate ?predicate .
