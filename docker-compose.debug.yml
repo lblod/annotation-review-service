@@ -9,6 +9,7 @@ services:
       DEFAULT_MU_AUTH_SCOPE: "http://services.semantic.works/annotation-review-service"
       TZ: Europe/Brussels
       NODE_ENV: development
+      LOG_LEVEL: 'debug'
     ports:
       - "8082:80"
       - "9225:9229"
