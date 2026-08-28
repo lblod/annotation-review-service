@@ -20,6 +20,23 @@ export async function getAllAnnotationCountForTarget(
   filters = {} as Filters,
 ) {
   const filterAlreadyReviewed = buildFilterAlreadyReviewed(sessionId, filters);
+  let objectPath = `?annotation oa:hasBody ?object .`;
+  if (target.bodyType === 'statement') {
+    objectPath = `?annotation oa:hasBody ?body .
+        ?body rdf:predicate ?predicate .
+        ?body rdf:object ?object .`;
+  } else if (target.bodyType === 'mixed') {
+    objectPath = `{
+      ?annotation oa:hasBody ?body .
+      ?body rdf:predicate ?predicate .
+      ?body rdf:object ?object .
+    } UNION {
+      ?annotation oa:hasBody ?object .
+      FILTER NOT EXISTS {
+        ?object rdf:object ?someObject .
+      }
+    }`;
+  }
   const result = await timedQuery(`
     ${target.prefixes}
     PREFIX oa: <http://www.w3.org/ns/oa#>
@@ -32,16 +49,7 @@ export async function getAllAnnotationCountForTarget(
 
       ${target.annotationPath}
 
-      {
-        ?annotation oa:hasBody ?body .
-        ?body rdf:predicate ?predicate .
-        ?body rdf:object ?object .
-      } UNION {
-        ?annotation oa:hasBody ?object .
-        FILTER NOT EXISTS {
-          ?object rdf:object ?something .
-        }
-      }
+      ${objectPath}
 
       ?action prov:generated ?annotation .
       ?action prov:wasAssociatedWith ?agent .
@@ -404,6 +412,24 @@ export function buildAnnotationWhere(
     }`;
   }
 
+  let objectPath = `?annotation oa:hasBody ?object .`;
+  if (target.bodyType === 'statement') {
+    objectPath = `?annotation oa:hasBody ?body .
+      ?body rdf:predicate ?predicate .
+      ?body rdf:object ?object .`;
+  } else if (target.bodyType === 'mixed') {
+    objectPath = `{
+      ?annotation oa:hasBody ?body .
+      ?body rdf:predicate ?predicate .
+      ?body rdf:object ?object .
+    } UNION {
+      ?annotation oa:hasBody ?object .
+      FILTER NOT EXISTS {
+        ?object rdf:object ?someObject .
+      }
+    }`;
+  }
+
   const filterString = buildFilterString(target.filters.annotation, filters);
   return `
     ${valuesStatement}
@@ -413,16 +439,7 @@ export function buildAnnotationWhere(
     ${target.annotationPath}
 
     ?annotation mu:uuid ?annotationId .
-    {
-      ?annotation oa:hasBody ?body .
-      ?body rdf:predicate ?predicate .
-      ?body rdf:object ?object .
-    } UNION {
-      ?annotation oa:hasBody ?object .
-      FILTER NOT EXISTS {
-        ?object rdf:object ?something .
-      }
-    }
+    ${objectPath}
 
     ?action prov:generated ?annotation .
     ?action prov:wasAssociatedWith ?agent .

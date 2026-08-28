@@ -141,6 +141,8 @@ The targets hold the available types of target as a json object, with the keys b
   "targetFilter": "?target a eli:Expression .",
   // some sparql snippet to be used to filter the targets, available variables are ?annotation, ?agent
   "annotationFilter": "VALUES ?agent {   <http://example.org/entity-extraction>  }",
+  // the type of body of the annotations, either "direct" (the body is an instance uri) or "statement" (the body is an rdf statement) or "mixed" (can be either), mixed is slower. the default is "direct"
+  "bodyType": "mixed",
   // filters that can be added to the target request by adding &<filterName>=<filterValue1,filterValue1> to the request params
   "filters": {
     "filterName": {

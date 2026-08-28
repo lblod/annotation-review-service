@@ -7,6 +7,7 @@ export type FilterConfig = {
 export type Target = {
   annotationFilter: string;
   annotationPath: string;
+  bodyType?: 'statement' | 'direct' | 'mixed';
   filters: {
     target: { [filterName: string]: FilterConfig };
     annotation: { [filterName: string]: FilterConfig };
