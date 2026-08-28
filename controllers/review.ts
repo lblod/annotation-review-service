@@ -1,11 +1,5 @@
-import {
-  query,
-  update,
-  sparqlEscapeString,
-  sparqlEscapeUri,
-  uuid,
-  sparqlEscape,
-} from 'mu';
+import { sparqlEscapeString, sparqlEscapeUri, uuid, sparqlEscape } from 'mu';
+import { timedQuery, timedUpdateQuery } from '../utils/timed-query';
 import config from '../config/config';
 import { AnnotationCounts, Correction, Statement } from '../types';
 
@@ -113,7 +107,7 @@ async function addCorrectionByDirectResource(
   const activityUri = `http://data.lblod.info/id/activities/${activityId}`;
   const safeResourceUrisValues = resourceUris.map(sparqlEscapeUri).join('\n');
 
-  await update(`
+  await timedUpdateQuery(`
     PREFIX mu: <http://mu.semte.ch/vocabularies/core/>
     PREFIX ext: <http://mu.semte.ch/vocabularies/ext/>
     PREFIX oa: <http://www.w3.org/ns/oa#>
@@ -166,7 +160,7 @@ async function addCorrectionByStatement(
   const activityId = uuid();
   const activityUri = `http://data.lblod.info/id/activities/${activityId}`;
 
-  await update(`
+  await timedUpdateQuery(`
     PREFIX mu: <http://mu.semte.ch/vocabularies/core/>
     PREFIX ext: <http://mu.semte.ch/vocabularies/ext/>
     PREFIX oa: <http://www.w3.org/ns/oa#>
@@ -231,7 +225,7 @@ async function addReviewAnnotation(
 
   const safeBody = sparqlEscapeUri(config.reviewBodyPrefix + result);
 
-  await update(`
+  await timedUpdateQuery(`
     PREFIX mu: <http://mu.semte.ch/vocabularies/core/>
     PREFIX ext: <http://mu.semte.ch/vocabularies/ext/>
     PREFIX oa: <http://www.w3.org/ns/oa#>
@@ -265,7 +259,7 @@ async function removeReviewAnnotation(
   annotationTargetId: string,
   sessionId: string,
 ) {
-  await update(`
+  await timedUpdateQuery(`
     PREFIX mu: <http://mu.semte.ch/vocabularies/core/>
     PREFIX ext: <http://mu.semte.ch/vocabularies/ext/>
     PREFIX oa: <http://www.w3.org/ns/oa#>
@@ -305,7 +299,7 @@ export async function getAnnotationCounts(
   sessionId: string,
   annotationTargetIds: string[],
 ) {
-  const result = await query(`
+  const result = await timedQuery(`
     PREFIX mu: <http://mu.semte.ch/vocabularies/core/>
     PREFIX ext: <http://mu.semte.ch/vocabularies/ext/>
     PREFIX oa: <http://www.w3.org/ns/oa#>

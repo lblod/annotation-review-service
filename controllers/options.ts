@@ -1,4 +1,4 @@
-import { query } from 'mu';
+import { timedQuery } from '../utils/timed-query';
 import { KeyValuePair } from '../types';
 
 // eslint-disable-next-line prettier/prettier
@@ -15,7 +15,7 @@ export async function fetchExpressionPredicates(): Promise<Array<KeyValuePair>> 
     }
   `;
 
-  const sparqlResult = await query(queryString);
+  const sparqlResult = await timedQuery(queryString);
   const values = sparqlResult.results?.bindings ?? [];
 
   return values.map((result) => ({
@@ -34,7 +34,7 @@ export async function fetchAiModels(): Promise<Array<KeyValuePair>> {
     }
   `;
 
-  const sparqlResult = await query(queryString);
+  const sparqlResult = await timedQuery(queryString);
   const values = sparqlResult.results?.bindings ?? [];
 
   return values.map((result) => ({
@@ -57,7 +57,7 @@ export async function fetchValueTypes(): Promise<Array<KeyValuePair>> {
     }
   `;
 
-  const sparqlResult = await query(queryString);
+  const sparqlResult = await timedQuery(queryString);
   const values = sparqlResult.results?.bindings ?? [];
 
   return values

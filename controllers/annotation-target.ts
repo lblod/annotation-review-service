@@ -1,5 +1,5 @@
 import { Filters, Target } from '../types';
-import { query } from 'mu';
+import { timedQuery } from '../utils/timed-query';
 import { buildAnnotationWhere } from './annotations';
 import { buildFilterString } from '../utils/filters';
 
@@ -11,7 +11,7 @@ export async function getTargets(
 ) {
   const offset = page * pageSize;
 
-  const result = await query(`
+  const result = await timedQuery(`
     ${target.prefixes}
     PREFIX oa: <http://www.w3.org/ns/oa#>
     PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
@@ -73,7 +73,7 @@ async function getTargetAnnotationCount(
       } 
     `;
   }
-  const results = await query(`
+  const results = await timedQuery(`
     ${target.prefixes}
     PREFIX oa: <http://www.w3.org/ns/oa#>
     PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
@@ -104,7 +104,7 @@ export async function getTargetCount(
   target: Target,
   filters: { [filterName: string]: string },
 ) {
-  const result = await query(`
+  const result = await timedQuery(`
     ${target.prefixes}
     PREFIX oa: <http://www.w3.org/ns/oa#>
     PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
