@@ -29,9 +29,14 @@ export type Annotation = {
   agentName: string;
 };
 
+export type LanguageString = {
+  string: string;
+  language?: string;
+};
+
 export type AnnotationWithComments = Annotation & {
-  linkComment?: string;
-  typeComment?: string;
+  linkComments?: LanguageString[];
+  typeComments?: LanguageString[];
 };
 
 export type Filters = { [filterName: string]: string };
