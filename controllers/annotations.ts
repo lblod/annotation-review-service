@@ -3,6 +3,7 @@ import {
   AnnotationCounts,
   AnnotationWithComments,
   Filters,
+  LanguageString,
   Target,
 } from '../types';
 import { sparqlEscapeString, sparqlEscapeUri } from 'mu';
@@ -129,24 +130,30 @@ export async function enrichAnnotationsWithRdfsComments(
     .map(sparqlEscapeUri)
     .join('\n');
   const results = await timedQuery(`
-  PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
-  SELECT ?uri ?comment WHERE {
-    VALUES ?uri {
-      ${safeUriValues}
-    }
-    ?uri rdfs:comment ?comment .
+    PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+    SELECT ?uri ?comment WHERE {
+      VALUES ?uri {
+        ${safeUriValues}
+      }
+      ?uri rdfs:comment ?comment .
   }`);
 
-  const uriCommentMapping = {} as { [key: string]: string };
+  const uriCommentMapping = {} as { [key: string]: LanguageString[] };
   results.results.bindings.forEach((b) => {
-    uriCommentMapping[b.uri.value] = b.comment.value;
+    if (!uriCommentMapping[b.uri.value]) {
+      uriCommentMapping[b.uri.value] = [];
+    }
+    uriCommentMapping[b.uri.value].push({
+      string: b.comment.value,
+      language: b.comment['xml:lang'],
+    });
   });
 
   return annotations.map((a) => {
     return {
       ...a,
-      linkComment: uriCommentMapping[a.link],
-      typeComment: uriCommentMapping[a.type],
+      linkComments: uriCommentMapping[a.link],
+      typeComments: uriCommentMapping[a.type],
     } as AnnotationWithComments;
   });
 }
