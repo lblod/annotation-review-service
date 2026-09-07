@@ -52,7 +52,7 @@ export async function getAllAnnotationCountForTarget(
       ${objectPath}
 
       ?action prov:generated ?annotation .
-      ?action prov:wasAssociatedWith ?agent .
+      ?action prov:wasAssociatedWith / prov:specializationOf ?agent .
       ${target.annotationFilter}
 
       ${buildFilterString(target.filters.annotation, filters)}
@@ -442,7 +442,7 @@ export function buildAnnotationWhere(
     ${objectPath}
 
     ?action prov:generated ?annotation .
-    ?action prov:wasAssociatedWith ?agent .
+    ?action prov:wasAssociatedWith / prov:specializationOf ?agent .
     OPTIONAL {
       ?agent skos:prefLabel ?agentName .
     }

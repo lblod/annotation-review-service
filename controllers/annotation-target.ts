@@ -138,7 +138,7 @@ export function getTargetSelector(
       ${filterString}
 
       ?action prov:generated ?annotation .
-      ?action prov:wasAssociatedWith ?agent .
+      ?action prov:wasAssociatedWith / prov:specializationOf ?agent .
       ${target.annotationFilter} 
   `;
 }

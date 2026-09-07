@@ -27,11 +27,15 @@ export async function fetchExpressionPredicates(): Promise<Array<KeyValuePair>> 
 export async function fetchAiModels(): Promise<Array<KeyValuePair>> {
   const queryString = `
     prefix prov: <http://www.w3.org/ns/prov#>
+    prefix skos: <http://www.w3.org/2004/02/skos/core#>
 
-    select distinct ?model
+    select distinct ?model (sample(?label) as ?label)
     where {
       ?s prov:specializationOf ?model .
-    }
+      optional {
+        ?model skos:prefLabel ?label .
+      }
+    } group by ?model
   `;
 
   const sparqlResult = await timedQuery(queryString);
@@ -39,7 +43,7 @@ export async function fetchAiModels(): Promise<Array<KeyValuePair>> {
 
   return values.map((result) => ({
     key: result.model.value,
-    value: result.model.value,
+    value: result.label.value,
   }));
 }
 
