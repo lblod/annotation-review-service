@@ -11,6 +11,7 @@ import {
   getAllAnnotationCountForTarget,
   getAllAnnotationsForTarget,
   enrichAnnotationsWithRdfsComments,
+  getReviewSummary,
 } from './controllers/annotations';
 import {
   deleteAnnotationReview,
@@ -58,6 +59,17 @@ app.get('/targets/:type', async (req, res) => {
   ]);
 
   res.send({ targets, count });
+});
+
+app.get('/review-summary/:type', async (req, res) => {
+  const target = config.targets[req.params.type];
+  if (!target) {
+    res.status(404).send({ error: `Unknown target type ${req.params.type}` });
+    return;
+  }
+  const filters = req.query.filter as unknown as Filters;
+  const rows = await getReviewSummary(target, filters);
+  res.send({ rows });
 });
 
 app.get('/annotations/:type/:id', async (req, res) => {

@@ -81,6 +81,24 @@ Returns all annotations for targets of the given type.
 
 The response has the same format as for `GET /annotations/:type/:id` but without the target section. It accepts the same query params.
 
+### GET /review-summary/:type
+
+Returns the number of review votes per concept and review result for the annotations of the given target type. Accepts the same `filter[...]` query params as `GET /annotations/:type/`, except `ignoreAlreadyReviewed`, which is ignored.
+
+The response has the format
+
+```json
+{
+  "rows": [
+    {
+      "conceptId": "44a75e92-3733-4d1d-8737-ca81cc608678",
+      "result": "approve",
+      "count": 12
+    }
+  ]
+}
+```
+
 ### POST /review/:annotationId/:result
 
 Stores the user's review. This service currently tracks the user using a SESSION, not an account. This is because in our use-case, we don't want users to register/sign in. If a user reviews the same annotation instance again later, the earlier review is removed (again for the same SESSION).
