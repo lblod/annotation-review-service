@@ -12,6 +12,8 @@ import {
   getAllAnnotationsForTarget,
   enrichAnnotationsWithRdfsComments,
   getReviewSummary,
+  getReviewTotals,
+  getConceptDecisionCounts,
 } from './controllers/annotations';
 import {
   deleteAnnotationReview,
@@ -68,8 +70,12 @@ app.get('/review-summary/:type', async (req, res) => {
     return;
   }
   const filters = req.query.filter as unknown as Filters;
-  const rows = await getReviewSummary(target, filters);
-  res.send({ rows });
+  const [rows, totals, concepts] = await Promise.all([
+    getReviewSummary(target, filters),
+    getReviewTotals(target, filters),
+    getConceptDecisionCounts(target, filters),
+  ]);
+  res.send({ rows, totals, concepts });
 });
 
 app.get('/annotations/:type/:id', async (req, res) => {

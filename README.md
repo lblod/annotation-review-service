@@ -83,7 +83,7 @@ The response has the same format as for `GET /annotations/:type/:id` but without
 
 ### GET /review-summary/:type
 
-Returns the number of review votes per concept and review result for the annotations of the given target type. Accepts the same `filter[...]` query params as `GET /annotations/:type/`, except `ignoreAlreadyReviewed`, which is ignored.
+Returns the number of review votes per concept and review result, plus annotation totals and decision counts per concept, for the annotations of the given target type. Accepts the same `filter[...]` query params as `GET /annotations/:type/`, except `ignoreAlreadyReviewed`, which is ignored.
 
 The response has the format
 
@@ -95,9 +95,22 @@ The response has the format
       "result": "approve",
       "count": 12
     }
+  ],
+  "totals": {
+    "annotations": 152,
+    "reviewedAnnotations": 58
+  },
+  "concepts": [
+    {
+      "conceptId": "44a75e92-3733-4d1d-8737-ca81cc608678",
+      "labeledDecisions": 14,
+      "reviewedDecisions": 4
+    }
   ]
 }
 ```
+
+`totals` counts the matching annotations and those with at least one review vote. `concepts` counts, per concept, the distinct targets labeled with it and those with at least one review vote.
 
 ### POST /review/:annotationId/:result
 
