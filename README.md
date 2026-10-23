@@ -81,6 +81,8 @@ Returns all annotations for targets of the given type.
 
 The response has the same format as for `GET /annotations/:type/:id` but without the target section. It accepts the same query params.
 
+Both annotation endpoints accept an optional `language` query param (e.g. `language=nl`). When a concept has several `skos:prefLabel` values, the one shown as `valueText` is picked in this order: the given language, no language tag, `en`, any other language (then by language code and label text).
+
 ### GET /review-summary/:type
 
 Returns the number of review votes per concept and review result, plus annotation totals and decision counts per concept, for the annotations of the given target type. Accepts the same `filter[...]` query params as `GET /annotations/:type/`, except `ignoreAlreadyReviewed`, which is ignored.

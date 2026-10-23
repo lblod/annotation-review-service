@@ -92,13 +92,14 @@ export async function getAllAnnotationsForTarget(
   filters = {} as Filters,
   page: number,
   pageSize: number,
+  language = '',
 ) {
   const [targetData, annotations] = await Promise.all([
     getTargetData(target),
     getAnnotationsData(sessionId, target, page, pageSize, undefined, filters),
   ]);
   const [textByObject, impacts, annotationCounts] = await Promise.all([
-    getObjectTexts(annotations),
+    getObjectTexts(annotations, language),
     getImpact(annotations),
     getAnnotationCounts(
       sessionId,
@@ -165,13 +166,14 @@ export async function getAnnotationsForTarget(
   filters = {},
   page: number,
   pageSize: number,
+  language = '',
 ) {
   const [targetData, annotations] = await Promise.all([
     getTargetData(target, targetId),
     getAnnotationsData(sessionId, target, page, pageSize, targetId, filters),
   ]);
   const [textByObject, linkByObject, annotationCounts] = await Promise.all([
-    getObjectTexts(annotations),
+    getObjectTexts(annotations, language),
     getObjectLinks(annotations),
     getAnnotationCounts(
       sessionId,
@@ -268,7 +270,20 @@ async function getAnnotationsData(
   );
 }
 
-async function getObjectTexts(annotations: Annotation[]) {
+// lower rank wins: selected language, untagged, english, any other language
+function labelRank(lang: string, language: string) {
+  const matches = (wanted: string) =>
+    lang === wanted || lang.startsWith(`${wanted}-`);
+  if (language && matches(language)) {
+    return 0;
+  }
+  if (lang === '') {
+    return 1;
+  }
+  return matches('en') ? 2 : 3;
+}
+
+async function getObjectTexts(annotations: Annotation[], language = '') {
   const { valueTypes } = config;
 
   const valueInfo = annotations
@@ -309,7 +324,7 @@ async function getObjectTexts(annotations: Annotation[]) {
     .join('\n');
 
   const result = await timedQuery(`
-    SELECT ?annotation ?object ?objectText
+    SELECT ?annotation ?object ?objectText ?objectLang
     WHERE {
       VALUES (?annotation ?object) {
         ${safeValues}
@@ -318,14 +333,25 @@ async function getObjectTexts(annotations: Annotation[]) {
     }
   `);
 
+  const rows = result.results.bindings.map((binding) => ({
+    annotation: binding.annotation.value,
+    object: binding.object.value,
+    text: binding.objectText.value,
+    lang: (binding.objectLang?.value ?? '').toLowerCase(),
+  }));
+  // best label first, ties broken on language code and text
+  rows.sort(
+    (a, b) =>
+      labelRank(a.lang, language) - labelRank(b.lang, language) ||
+      a.lang.localeCompare(b.lang) ||
+      a.text.localeCompare(b.text),
+  );
+
   const textByObject: { [annotation: string]: { [Object: string]: string } } =
     {};
-  result.results.bindings.forEach((binding) => {
-    if (!textByObject[binding.annotation.value]) {
-      textByObject[binding.annotation.value] = {};
-    }
-    textByObject[binding.annotation.value][binding.object.value] =
-      binding.objectText.value;
+  rows.forEach((row) => {
+    textByObject[row.annotation] ??= {};
+    textByObject[row.annotation][row.object] ??= row.text;
   });
 
   return textByObject;
