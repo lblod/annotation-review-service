@@ -15,7 +15,7 @@ export function buildFilterString(
 
     if (filterConfig.query) {
       filterString += `
-        FILTER EXISTS {
+        FILTER ( EXISTS {
           ${filterConfig.query}
       `;
     }
@@ -24,7 +24,8 @@ export function buildFilterString(
       // eslint-disable-next-line
       const safeValue = filters[key].split("'").join('').split('"').join('');
       filterString =
-        filterString.split(`$${filterConfig.variable}`).join(safeValue) + '\n}';
+        filterString.split(`$${filterConfig.variable}`).join(safeValue) +
+        '\n } )';
       return;
     }
 
@@ -41,9 +42,9 @@ export function buildFilterString(
       const filterValues = filterValueArray.join('\n');
       filterString += `
       VALUES ?${filterConfig.variable} {
-        ${filterValues} 
+        ${filterValues}
       }
-    }
+    } )
     `;
     } else {
       filterString += `filter(?${filterConfig.variable} IN (${filterValueArray.join(',\n')}))`;

@@ -67,10 +67,10 @@ async function getTargetAnnotationCount(
   let reviewedFilter = '';
   if (reviewed) {
     reviewedFilter = `
-      FILTER EXISTS {
-        ?review a ext:ReviewAnnotation . 
+      FILTER ( EXISTS {
+        ?review a ext:ReviewAnnotation .
         ?review oa:hasTarget ?annotation .
-      } 
+      } )
     `;
   }
   const results = await timedQuery(`
@@ -83,8 +83,8 @@ async function getTargetAnnotationCount(
     PREFIX bif: <http://www.openlinksw.com/schemas/bif#>
     PREFIX ext: <http://mu.semte.ch/vocabularies/ext/>
 
-    SELECT ?targetId (COUNT(DISTINCT ?annotation) as ?count) 
-    
+    SELECT ?targetId (COUNT(DISTINCT ?annotation) as ?count)
+
     WHERE {
       ${buildAnnotationWhere(target, targetIds, filters)}
 
@@ -113,7 +113,7 @@ export async function getTargetCount(
     SELECT (COUNT(DISTINCT ?target) AS ?count)
     WHERE {
       ${getTargetSelector(target, filters)}
-    }    
+    }
   `);
 
   return parseInt(result.results.bindings[0].count.value);
@@ -139,6 +139,6 @@ export function getTargetSelector(
 
       ?action prov:generated ?annotation .
       ?action prov:wasAssociatedWith / prov:specializationOf ?agent .
-      ${target.annotationFilter} 
+      ${target.annotationFilter}
   `;
 }
