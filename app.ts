@@ -11,10 +11,12 @@ import {
   getAllAnnotationCountForTarget,
   getAllAnnotationsForTarget,
   enrichAnnotationsWithRdfsComments,
+} from './controllers/annotations';
+import {
   getReviewSummary,
   getReviewTotals,
   getConceptDecisionCounts,
-} from './controllers/annotations';
+} from './controllers/review-summary';
 import {
   deleteAnnotationReview,
   reviewAnnotationTarget,
