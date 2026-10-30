@@ -81,6 +81,39 @@ Returns all annotations for targets of the given type.
 
 The response has the same format as for `GET /annotations/:type/:id` but without the target section. It accepts the same query params.
 
+Both annotation endpoints accept an optional `language` query param (e.g. `language=nl`). When a concept has several `skos:prefLabel` values, the one shown as `valueText` is picked in this order: the given language, no language tag, `en`, any other language (then by language code and label text).
+
+### GET /review-summary/:type
+
+Returns the number of review votes per concept and review result, plus annotation totals and decision counts per concept, for the annotations of the given target type. Accepts the same `filter[...]` query params as `GET /annotations/:type/`, except `ignoreAlreadyReviewed`, which is ignored.
+
+The response has the format
+
+```json
+{
+  "rows": [
+    {
+      "conceptId": "44a75e92-3733-4d1d-8737-ca81cc608678",
+      "result": "approve",
+      "count": 12
+    }
+  ],
+  "totals": {
+    "annotations": 152,
+    "reviewedAnnotations": 58
+  },
+  "concepts": [
+    {
+      "conceptId": "44a75e92-3733-4d1d-8737-ca81cc608678",
+      "labeledDecisions": 14,
+      "reviewedDecisions": 4
+    }
+  ]
+}
+```
+
+`totals` counts the matching annotations and those with at least one review vote. `concepts` counts, per concept, the distinct targets labeled with it and those with at least one review vote.
+
 ### POST /review/:annotationId/:result
 
 Stores the user's review. This service currently tracks the user using a SESSION, not an account. This is because in our use-case, we don't want users to register/sign in. If a user reviews the same annotation instance again later, the earlier review is removed (again for the same SESSION).

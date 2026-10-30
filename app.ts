@@ -13,6 +13,11 @@ import {
   enrichAnnotationsWithRdfsComments,
 } from './controllers/annotations';
 import {
+  getReviewSummary,
+  getReviewTotals,
+  getConceptDecisionCounts,
+} from './controllers/review-summary';
+import {
   deleteAnnotationReview,
   reviewAnnotationTarget,
 } from './controllers/review';
@@ -33,6 +38,14 @@ app.use(
 );
 
 app.use(express.urlencoded({ extended: true }));
+
+// language tag used to pick one label per concept, e.g. "nl"
+function requestLanguage(req: Request) {
+  const language = req.query.language;
+  return typeof language === 'string'
+    ? language.toLowerCase().split('-')[0]
+    : '';
+}
 
 app.get('/health', async (_req, res) => {
   res.send({ status: 'ok' });
@@ -60,6 +73,21 @@ app.get('/targets/:type', async (req, res) => {
   res.send({ targets, count });
 });
 
+app.get('/review-summary/:type', async (req, res) => {
+  const target = config.targets[req.params.type];
+  if (!target) {
+    res.status(404).send({ error: `Unknown target type ${req.params.type}` });
+    return;
+  }
+  const filters = req.query.filter as unknown as Filters;
+  const [rows, totals, concepts] = await Promise.all([
+    getReviewSummary(target, filters),
+    getReviewTotals(target, filters),
+    getConceptDecisionCounts(target, filters),
+  ]);
+  res.send({ rows, totals, concepts });
+});
+
 app.get('/annotations/:type/:id', async (req, res) => {
   const type = req.params.type;
   const id = req.params.id;
@@ -76,7 +104,15 @@ app.get('/annotations/:type/:id', async (req, res) => {
 
   const [annotationCount, annotations] = await Promise.all([
     getAnnotationCountForTarget(sessionId, target, id, filters),
-    getAnnotationsForTarget(sessionId, target, id, filters, page, pageSize),
+    getAnnotationsForTarget(
+      sessionId,
+      target,
+      id,
+      filters,
+      page,
+      pageSize,
+      requestLanguage(req),
+    ),
   ]);
 
   const enrichedAnnotations = await enrichAnnotationsWithRdfsComments(
@@ -106,7 +142,14 @@ app.get('/annotations/:type', async (req, res) => {
 
   const [annotationCount, annotations] = await Promise.all([
     getAllAnnotationCountForTarget(sessionId, target, filters),
-    getAllAnnotationsForTarget(sessionId, target, filters, page, pageSize),
+    getAllAnnotationsForTarget(
+      sessionId,
+      target,
+      filters,
+      page,
+      pageSize,
+      requestLanguage(req),
+    ),
   ]);
   const enrichedAnnotations = await enrichAnnotationsWithRdfsComments(
     annotations.annotations,
