@@ -248,3 +248,8 @@ The default path for all types to find the URI of the value, e.g. in case of a e
   "defaultLinkPath": "?object <http://www.w3.org/2004/02/skos/core#exactMatch> ?objectLink ."
 }
 ```
+
+## Environment
+
+- ANNOTATION_TARGET_TYPES: which types are targets for reviewing, comma separated list of uris, defaults to http://www.w3.org/ns/oa#Annotation
+- MIN_SEARCH_LENGTH: filters of type 'search' should have a value of at least this length to be taken into account. This is important when using virtuoso's bif:contains. Default: 4

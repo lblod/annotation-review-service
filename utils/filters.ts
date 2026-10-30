@@ -1,6 +1,8 @@
 import { FilterConfig, Filters } from '../types';
 import { sparqlEscapeUri, sparqlEscapeString } from 'mu';
 
+const MIN_SEARCH_LENGTH = parseInt(process.env.MIN_SEARCH_LENGTH || '4'); // because of virtuoso's bif contains
+
 export function buildFilterString(
   filterConfigs: { [key: string]: FilterConfig },
   filters: Filters,
@@ -23,9 +25,12 @@ export function buildFilterString(
     if (filterConfig.type === 'search') {
       // eslint-disable-next-line
       const safeValue = filters[key].split("'").join('').split('"').join('');
-      filterString =
-        filterString.split(`$${filterConfig.variable}`).join(safeValue) +
-        '\n } )';
+      if (safeValue.length >= MIN_SEARCH_LENGTH) {
+        filterString =
+          filterString.split(`$${filterConfig.variable}`).join(safeValue) +
+          '\n } )';
+      }
+
       return;
     }
 
